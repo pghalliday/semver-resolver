@@ -3,16 +3,16 @@ Library to calculate versions for a dependency tree of libraries that use semver
 
 ## Usage
 
-Require the `resolve` function
+Require the `calculate` function
 
 ```javascript
-var resolve = require('recursive-semver');
+var calculate = require('recursive-semver');
 ```
 
-Call `resolve`, supplying functions that return promises for available versions of libraries and the version constraints associated with particular versions of libraries along with a top level list of libraries and their version constraints (the dependencies). `resolve` returns a promise for the calculated list of dependencies and their versions, or an error if the constraints cannot be resolved.
+Call `calculate`, supplying functions that return promises for available versions of libraries and the version constraints associated with particular versions of libraries along with a top level list of libraries and their version constraints (the dependencies). `calculate` returns a promise for the calculated list of dependencies and their versions, or an error if the constraints cannot be resolved.
 
 ```javascript
-resolve({
+calculate({
   versions: library => {
 
     // return a promise for the available versions of the requested library

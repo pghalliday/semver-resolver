@@ -5,9 +5,9 @@ let chaiAsPromised = require('chai-as-promised');
 chai.use(chaiAsPromised);
 chai.should();
 
-let resolve = require('../../src');
+let calculate = require('../../src');
 
-describe('resolve', () => {
+describe('calculate', () => {
   before(() => {
     this.dependencies = {
       test1: '^1.2.3',
@@ -35,7 +35,7 @@ describe('resolve', () => {
       });
 
       it('should successfully resolve the version constraints', () => {
-        return resolve({
+        return calculate({
           versions: this.versions,
           dependencies: this.dependencies
         }).should.eventually.eql({
@@ -64,7 +64,7 @@ describe('resolve', () => {
       });
 
       it('should fail with an error', () => {
-        return resolve({
+        return calculate({
           versions: this.versions,
           dependencies: this.dependencies
         }).should.be.rejectedWith(
@@ -89,7 +89,7 @@ describe('resolve', () => {
       });
 
       it('should fail with an error', () => {
-        return resolve({
+        return calculate({
           versions: this.versions,
           dependencies: this.dependencies
         }).should.be.rejectedWith(
@@ -164,7 +164,7 @@ describe('resolve', () => {
       });
 
       it('should successfully resolve the version constraints', () => {
-        return resolve({
+        return calculate({
           versions: this.versions,
           constraints: this.constraints,
           dependencies: this.dependencies
