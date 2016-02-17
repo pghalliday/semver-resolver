@@ -44,5 +44,33 @@ describe('resolve', () => {
         });
       });
     });
+
+    describe('with constraints that cannot be resolved', () => {
+      before(() => {
+        this.versions = library => {
+          return new Promise((resolve, reject) => {
+            switch (library) {
+              case 'test1':
+                resolve(['1.2.2', '1.2.3', '1.2.4']);
+                break;
+              case 'test2':
+                resolve(['4.5.5']);
+                break;
+              default:
+                reject(new Error(`No such library: ${library}`));
+            }
+          });
+        };
+      });
+
+      it('should fail with an error', () => {
+        return resolve({
+          versions: this.versions,
+          dependencies: this.dependencies
+        }).should.be.rejectedWith(
+          'Unable to satisfy version constraint: test2: ^4.5.6'
+        );
+      });
+    });
   });
 });
