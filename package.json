@@ -1,0 +1,23 @@
+{
+  "name": "recursive-semver",
+  "version": "1.0.0",
+  "description": "Library to calculate versions for a dependency tree of libraries that use semver but do not allow more than one version of a library to be present in the calculation",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pghalliday/recursive-semver.git"
+  },
+  "keywords": [
+    "semver",
+    "recursive"
+  ],
+  "author": "Peter Halliday <pghalliday@gmail.com> (http://pghalliday.com)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/pghalliday/recursive-semver/issues"
+  },
+  "homepage": "https://github.com/pghalliday/recursive-semver#readme"
+}
