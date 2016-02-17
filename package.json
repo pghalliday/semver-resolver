@@ -2,9 +2,15 @@
   "name": "recursive-semver",
   "version": "1.0.0",
   "description": "Library to calculate versions for a dependency tree of libraries that use semver but do not allow more than one version of a library to be present in the calculation",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "mocha": "mocha --recursive --reporter spec",
+    "lint": "eslint src/** test/**",
+    "pretest": "npm run lint",
+    "test": "isparta cover --report text --report html _mocha -- --recursive --reporter spec",
+    "posttest": "istanbul check-coverage --statement 100 --functions 100 --branches 100 --lines 100",
+    "prepublish": "npm run test",
+    "watch": "watch 'npm run test' src test"
   },
   "repository": {
     "type": "git",
@@ -19,5 +25,20 @@
   "bugs": {
     "url": "https://github.com/pghalliday/recursive-semver/issues"
   },
-  "homepage": "https://github.com/pghalliday/recursive-semver#readme"
+  "homepage": "https://github.com/pghalliday/recursive-semver#readme",
+  "dependencies": {
+    "semver": "^5.1.0"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "eslint": "^2.1.0",
+    "eslint-config-google": "^0.4.0",
+    "eslint-plugin-mocha": "^2.0.0",
+    "isparta": "^4.0.0",
+    "istanbul": "^0.4.2",
+    "mocha": "^2.4.5",
+    "sinon": "^1.17.3",
+    "sinon-chai": "^2.8.0",
+    "watch": "^0.17.1"
+  }
 }
