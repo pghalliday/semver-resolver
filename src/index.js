@@ -3,9 +3,9 @@
 let semver = require('semver');
 let _ = require('lodash');
 
-module.exports = params => {
+let calculateRecursive = (calculation, params) => {
   return new Promise((resolve, reject) => {
-    let promises = _.map(params.dependencies, (range, library) => {
+    let versionPromises = _.map(params.dependencies, (range, library) => {
       return params.versions(library)
       .then(versions => {
         return {
@@ -15,31 +15,49 @@ module.exports = params => {
         };
       });
     });
-    Promise.all(promises)
+    Promise.all(versionPromises)
     .then(libraryVersionsList => {
-      let calculation = {};
-      let error = null;
-      _.forEach(libraryVersionsList, libraryVersions => {
+      let constraintPromises = _.map(libraryVersionsList, libraryVersions => {
         let library = libraryVersions.library;
         let range = libraryVersions.range;
         let versions = libraryVersions.versions;
-        let maxSatisfying = semver.maxSatisfying(
-          versions,
-          range
-        );
-        if (maxSatisfying === null) {
-          error = new Error(
-            `Unable to satisfy version constraint: ${library}: ${range}`
+        return new Promise((resolve, reject) => {
+          let maxSatisfying = semver.maxSatisfying(
+            versions,
+            range
           );
-          return false;
-        }
-        calculation[library] = maxSatisfying;
+          if (maxSatisfying === null) {
+            reject(
+              new Error(
+                `Unable to satisfy version constraint: ${library}: ${range}`
+              )
+            );
+          } else {
+            resolve(maxSatisfying);
+          }
+        }).then(version => {
+          calculation[library] = version;
+          if (params.constraints) {
+            return params.constraints(library, version);
+          }
+        }).then(dependencies => {
+          if (dependencies) {
+            return calculateRecursive(calculation, {
+              versions: params.versions,
+              constraints: params.constraints,
+              dependencies: dependencies
+            });
+          }
+        });
       });
-      if (error === null) {
-        resolve(calculation);
-      } else {
-        reject(error);
-      }
+      return Promise.all(constraintPromises);
+    }).then(() => {
+      resolve(calculation);
     }, reject);
   });
+};
+
+module.exports = params => {
+  let calculation = {};
+  return calculateRecursive(calculation, params);
 };
