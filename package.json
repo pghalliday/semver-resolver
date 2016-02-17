@@ -27,18 +27,18 @@
   },
   "homepage": "https://github.com/pghalliday/recursive-semver#readme",
   "dependencies": {
+    "lodash": "^4.5.0",
     "semver": "^5.1.0"
   },
   "devDependencies": {
     "chai": "^3.5.0",
+    "chai-as-promised": "^5.2.0",
     "eslint": "^2.1.0",
     "eslint-config-google": "^0.4.0",
     "eslint-plugin-mocha": "^2.0.0",
     "isparta": "^4.0.0",
     "istanbul": "^0.4.2",
     "mocha": "^2.4.5",
-    "sinon": "^1.17.3",
-    "sinon-chai": "^2.8.0",
     "watch": "^0.17.1"
   }
 }

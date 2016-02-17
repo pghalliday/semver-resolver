@@ -13,7 +13,7 @@ Call `resolve`, supplying functions that return promises for available versions 
 
 ```javascript
 resolve({
-  versions: (library) => {
+  versions: library => {
 
     // return a promise for the available versions of the requested library
     ...
@@ -32,7 +32,7 @@ resolve({
     'mylib': '^2.8.0',
     'another-lib': '^0.17.1'
   }
-}).then((versions) => {
+}).then(versions => {
 
   // `versions` will be a mapping of all the required
   // libraries to the highest versions that satisfy the
@@ -41,7 +41,7 @@ resolve({
 
 }, (error) => {
 
-  // an error occurred, most likley because the version
+  // an error occurred, most likely because the version
   // constraints cannot be resolved 
   ...
 
