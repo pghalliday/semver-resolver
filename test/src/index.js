@@ -38,7 +38,7 @@ describe('resolve', () => {
         return resolve({
           versions: this.versions,
           dependencies: this.dependencies
-        }).should.eventually.equal({
+        }).should.eventually.eql({
           test1: '1.2.4',
           test2: '4.5.7'
         });
