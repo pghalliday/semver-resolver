@@ -5,7 +5,7 @@ let chaiAsPromised = require('chai-as-promised');
 chai.use(chaiAsPromised);
 chai.should();
 
-let calculate = require('../../src');
+let RecursiveSemver = require('../../src');
 
 describe('calculate', () => {
   before(() => {
@@ -35,10 +35,10 @@ describe('calculate', () => {
       });
 
       it('should successfully resolve the version constraints', () => {
-        return calculate({
-          versions: this.versions,
-          dependencies: this.dependencies
-        }).should.eventually.eql({
+        return new RecursiveSemver(
+          this.dependencies,
+          this.versions
+        ).resolve().should.eventually.eql({
           test1: '1.2.4',
           test2: '4.5.7'
         });
@@ -64,10 +64,10 @@ describe('calculate', () => {
       });
 
       it('should fail with an error', () => {
-        return calculate({
-          versions: this.versions,
-          dependencies: this.dependencies
-        }).should.be.rejectedWith(
+        return new RecursiveSemver(
+          this.dependencies,
+          this.versions
+        ).resolve().should.be.rejectedWith(
           'Unable to satisfy version constraints: test2@^4.5.6'
         );
       });
@@ -89,10 +89,10 @@ describe('calculate', () => {
       });
 
       it('should fail with an error', () => {
-        return calculate({
-          versions: this.versions,
-          dependencies: this.dependencies
-        }).should.be.rejectedWith(
+        return new RecursiveSemver(
+          this.dependencies,
+          this.versions
+        ).resolve().should.be.rejectedWith(
           'No such library: test2'
         );
       });
@@ -175,11 +175,11 @@ describe('calculate', () => {
       });
 
       it('should successfully resolve the version constraints', () => {
-        return calculate({
-          versions: this.versions,
-          constraints: this.constraints,
-          dependencies: this.dependencies
-        }).should.eventually.eql({
+        return new RecursiveSemver(
+          this.dependencies,
+          this.versions,
+          this.constraints
+        ).resolve().should.eventually.eql({
           test1: '1.2.3',
           test2: '4.5.6',
           test3: '2.3.4',
@@ -213,11 +213,11 @@ describe('calculate', () => {
       });
 
       it('should successfully resolve the version constraints', () => {
-        return calculate({
-          versions: this.versions,
-          constraints: this.constraints,
-          dependencies: this.dependencies
-        }).should.eventually.eql({
+        return new RecursiveSemver(
+          this.dependencies,
+          this.versions,
+          this.constraints
+        ).resolve().should.eventually.eql({
           test1: '1.2.4',
           test2: '4.5.5',
           test3: '2.3.4',
