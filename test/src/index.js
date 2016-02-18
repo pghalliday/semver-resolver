@@ -114,7 +114,7 @@ describe('calculate', () => {
                 case '1.2.4':
                   resolve({
                     test3: '^2.3.4',
-                    test2: '^4.5.5'
+                    test2: '4.5.6'
                   });
                   break;
                 default:
@@ -128,7 +128,7 @@ describe('calculate', () => {
                     test4: '^3.4.5'
                   });
                   break;
-                case '4.5.5':
+                case '4.5.7':
                   resolve({
                     test4: '^3.4.5'
                   });
@@ -197,7 +197,7 @@ describe('calculate', () => {
                 resolve(['1.2.4']);
                 break;
               case 'test2':
-                resolve(['4.5.5', '4.5.6']);
+                resolve(['4.5.6', '4.5.7']);
                 break;
               case 'test3':
                 resolve(['2.3.4']);
@@ -219,7 +219,7 @@ describe('calculate', () => {
           this.constraints
         ).resolve().should.eventually.eql({
           test1: '1.2.4',
-          test2: '4.5.5',
+          test2: '4.5.6',
           test3: '2.3.4',
           test4: '3.4.5'
         });
