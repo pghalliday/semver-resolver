@@ -9,7 +9,7 @@ Require the `RecursiveSemver` class
 let RecursiveSemver = require('recursive-semver');
 ```
 
-Call construct a new `RecursiveSemver` instance, supplying functions that return promises for available versions of libraries and the version constraints associated with particular versions of libraries along with a top level list of libraries and their version constraints (the dependencies).
+Construct a new `RecursiveSemver` instance, supplying functions that return promises for available versions of libraries and the version constraints associated with particular versions of libraries along with a top level list of libraries and their version constraints (the dependencies).
 
 ```javascript
 let rs = new RecursiveSemver(library => {
