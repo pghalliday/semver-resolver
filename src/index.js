@@ -37,6 +37,7 @@ class RecursiveSemver {
     }).then(versions => {
       let version = this.maxSatisfying(library, versions);
       // record in the resolution
+      // TODO: check if we have a changing resolution that will require a recalculation
       this.resolution[library] = version;
       // now look up sub dependencies for the next pass
       let libraryVersion = `${library}@${version}`;
@@ -114,6 +115,8 @@ class RecursiveSemver {
       return validVersion;
     }
     throw new Error(
+      // TODO: figure out where the conflict is and see if an earlier version will
+      // satisfy the constraints
       `Unable to satisfy version constraints: ${library}@${ranges}`
     );
   }
