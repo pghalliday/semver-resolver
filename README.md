@@ -12,22 +12,25 @@ let RecursiveSemver = require('recursive-semver');
 Construct a new `RecursiveSemver` instance, supplying functions that return promises for available versions of libraries and the version constraints associated with particular versions of libraries along with a top level list of libraries and their version constraints (the dependencies).
 
 ```javascript
-let rs = new RecursiveSemver(library => {
+let rs = new RecursiveSemver(
+  {
+    'foo': '^2.4.5',
+    'bar': '^1.17.3',
+    'mylib': '^2.8.0',
+    'another-lib': '^0.17.1'
+  },
+  library => {
 
     // return a promise for the available versions of the requested library
     ...
 
-  }, (library, version) => {
+  },
+  (library, version) => {
 
     // return a promise for the additional version constraints
     // to be applied for the requested version of the requested library
     ...
 
-  }, {
-    'foo': '^2.4.5',
-    'bar': '^1.17.3',
-    'mylib': '^2.8.0',
-    'another-lib': '^0.17.1'
   }
 });
 ```
@@ -35,20 +38,23 @@ let rs = new RecursiveSemver(library => {
 `#resolve` returns a promise for the resolved list of dependencies and their versions, or an error if the constraints cannot be resolved.
 
 ```
-rs.resolve.then(resolution => {
+rs.resolve.then(
+  resolution => {
 
-  // `resolution` will be a mapping of all the required
-  // libraries to the highest versions that satisfy the
-  // recursive version constraints
-  ...
+    // `resolution` will be a mapping of all the required
+    // libraries to the highest versions that satisfy the
+    // recursive version constraints
+    ...
 
-}, error => {
+  },
+  error => {
 
-  // an error occurred, most likely because the version
-  // constraints cannot be resolved 
-  ...
+    // an error occurred, most likely because the version
+    // constraints cannot be resolved 
+    ...
 
-});
+  }
+);
 ```
 
 ## Contributing
