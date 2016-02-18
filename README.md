@@ -50,7 +50,7 @@ calculate({
 
 ## Contributing
 
-Install depenendcies
+Install dependencies
 
 ```
 npm install

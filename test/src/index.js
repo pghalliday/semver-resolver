@@ -68,7 +68,7 @@ describe('calculate', () => {
           versions: this.versions,
           dependencies: this.dependencies
         }).should.be.rejectedWith(
-          'Unable to satisfy version constraint: test2: ^4.5.6'
+          'Unable to satisfy version constraints: test2@^4.5.6'
         );
       });
     });
@@ -111,6 +111,12 @@ describe('calculate', () => {
                     test3: '^2.3.4'
                   });
                   break;
+                case '1.2.4':
+                  resolve({
+                    test3: '^2.3.4',
+                    test2: '^4.5.5'
+                  });
+                  break;
                 default:
                   reject(new Error(`No such version: ${library}@${version}`));
               }
@@ -118,6 +124,11 @@ describe('calculate', () => {
             case 'test2':
               switch (version) {
                 case '4.5.6':
+                  resolve({
+                    test4: '^3.4.5'
+                  });
+                  break;
+                case '4.5.5':
                   resolve({
                     test4: '^3.4.5'
                   });
@@ -171,6 +182,44 @@ describe('calculate', () => {
         }).should.eventually.eql({
           test1: '1.2.3',
           test2: '4.5.6',
+          test3: '2.3.4',
+          test4: '3.4.5'
+        });
+      });
+    });
+
+    describe('with overlapping constraints', () => {
+      before(() => {
+        this.versions = library => {
+          return new Promise((resolve, reject) => {
+            switch (library) {
+              case 'test1':
+                resolve(['1.2.4']);
+                break;
+              case 'test2':
+                resolve(['4.5.5', '4.5.6']);
+                break;
+              case 'test3':
+                resolve(['2.3.4']);
+                break;
+              case 'test4':
+                resolve(['3.4.5']);
+                break;
+              default:
+                reject(new Error(`No such library: ${library}`));
+            }
+          });
+        };
+      });
+
+      it('should successfully resolve the version constraints', () => {
+        return calculate({
+          versions: this.versions,
+          constraints: this.constraints,
+          dependencies: this.dependencies
+        }).should.eventually.eql({
+          test1: '1.2.4',
+          test2: '4.5.5',
           test3: '2.3.4',
           test4: '3.4.5'
         });

@@ -3,14 +3,50 @@
 let semver = require('semver');
 let _ = require('lodash');
 
-let calculateRecursive = (calculation, params) => {
+let maxSatisfying = (library, versions, constraints) => {
+  let validVersion;
+  let ranges = [];
+  _.forOwn(constraints, value => {
+    if (value[library]) {
+      ranges.push(value[library]);
+    }
+  });
+  _.forEach(versions, version => {
+    let valid = true;
+    _.forEach(ranges, range => {
+      if (!semver.satisfies(version, range)) {
+        valid = false;
+        return false;
+      }
+    });
+    if (valid) {
+      validVersion = version;
+      return false;
+    }
+  });
+  if (validVersion) {
+    return validVersion;
+  }
+  throw new Error(
+    `Unable to satisfy version constraints: ${library}@${ranges}`
+  );
+};
+
+let calculateRecursive = (cache, constraints, calculation, params) => {
   return new Promise((resolve, reject) => {
-    let versionPromises = _.map(params.dependencies, (range, library) => {
-      return params.versions(library)
-      .then(versions => {
+    let versionPromises = _.map(Object.keys(params.dependencies), library => {
+      if (cache.versions[library]) {
         return {
           library: library,
-          range: range,
+          versions: cache.versions[library]
+        };
+      }
+      return params.versions(library)
+      .then(versions => {
+        versions.sort(semver.rcompare);
+        cache.versions[library] = versions;
+        return {
+          library: library,
           versions: versions
         };
       });
@@ -19,34 +55,69 @@ let calculateRecursive = (calculation, params) => {
     .then(libraryVersionsList => {
       let constraintPromises = _.map(libraryVersionsList, libraryVersions => {
         let library = libraryVersions.library;
-        let range = libraryVersions.range;
         let versions = libraryVersions.versions;
-        return new Promise((resolve, reject) => {
-          let maxSatisfying = semver.maxSatisfying(
+        return new Promise(resolve => {
+          let version = maxSatisfying(
+            library,
             versions,
-            range
+            constraints
           );
-          if (maxSatisfying === null) {
-            reject(
-              new Error(
-                `Unable to satisfy version constraint: ${library}: ${range}`
-              )
+          if (calculation[library]) {
+            // TODO: remove old version from constraints and recalculate where necessary
+            // TODO: I think i need to implement a queue in order to do the recalculation
+            // TODO: queues with promises are non trivial
+            // TODO: use generators?
+            let oldLibraryVersion = `${library}@${calculation[library]}`;
+            dropConstraints(
+              oldLibraryVersion,
+              constraints,
+              calculation
             );
-          } else {
-            resolve(maxSatisfying);
           }
-        }).then(version => {
+          let libraryVersion = `${library}@${version}`;
+          constraints[libraryVersion] = {};
           calculation[library] = version;
-          if (params.constraints) {
-            return params.constraints(library, version);
+          if (cache.constraints[libraryVersion]) {
+            resolve([
+              version,
+              cache.constraints[libraryVersion]
+            ]);
+          } else {
+            resolve([
+              version
+            ]);
           }
-        }).then(dependencies => {
+        }).then(versionDependencies => {
+          let version = versionDependencies[0];
+          let dependencies = versionDependencies[1];
           if (dependencies) {
-            return calculateRecursive(calculation, {
-              versions: params.versions,
-              constraints: params.constraints,
-              dependencies: dependencies
+            return versionDependencies;
+          }
+          if (params.constraints) {
+            return new Promise((resolve, reject) => {
+              params.constraints(library, version)
+              .then(dependencies => {
+                resolve([
+                  version,
+                  dependencies
+                ]);
+              }, reject);
             });
+          }
+        }).then(versionDependencies => {
+          if (versionDependencies) {
+            let version = versionDependencies[0];
+            let dependencies = versionDependencies[1];
+            let libraryVersion = `${library}@${version}`;
+            cache.constraints[libraryVersion] = dependencies;
+            if (constraints[libraryVersion]) {
+              constraints[libraryVersion] = dependencies;
+              return calculateRecursive(cache, constraints, calculation, {
+                versions: params.versions,
+                constraints: params.constraints,
+                dependencies: dependencies
+              });
+            }
           }
         });
       });
@@ -58,6 +129,13 @@ let calculateRecursive = (calculation, params) => {
 };
 
 module.exports = params => {
+  let constraints = {
+    root: params.dependencies
+  };
+  let cache = {
+    versions: {},
+    constraints: {}
+  };
   let calculation = {};
-  return calculateRecursive(calculation, params);
+  return calculateRecursive(cache, constraints, calculation, params);
 };
