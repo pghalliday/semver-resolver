@@ -3,11 +3,30 @@
 let semver = require('semver');
 let _ = require('lodash');
 
+let depth = 0;
+let maskLibrary = (libraries, tree, library) => {
+  depth++;
+  console.log('%d: before:', depth);
+  console.log(libraries);
+  console.log('%d: tree:', depth);
+  console.log(tree);
+  console.log('%d: library:', depth);
+  console.log(library);
+  _.pull(libraries, library);
+  _.forEach(tree[library], dependency => {
+    maskLibrary(libraries, tree, dependency);
+  });
+  console.log('%d: after:', depth);
+  console.log(libraries);
+  depth--;
+};
+
 class RecursiveSemver {
   constructor(rootDependencies, getVersions, getDependencies) {
     this.getVersions = getVersions;
     this.getDependencies = getDependencies;
     this.queuedDependencies = {};
+    this.queuedRecalculations = [];
     this.resolution = {};
     this.ranges = {};
     this.cache = {
@@ -19,6 +38,50 @@ class RecursiveSemver {
 
   queueDependencies(parent, dependencies) {
     this.queuedDependencies[parent] = dependencies;
+  }
+
+  rangesToTree() {
+    return _.mapKeys(
+      _.mapValues(
+        this.ranges,
+        dependencies => {
+          return Object.keys(dependencies);
+        }
+      ),
+      (value, key) => {
+        return key.split('@')[0];
+      }
+    );
+  }
+
+  getOrphans() {
+    let tree = this.rangesToTree();
+    let libraries = Object.keys(this.resolution);
+    maskLibrary(libraries, tree, 'root');
+    return libraries;
+  }
+
+  dropVersion(library, version) {
+    let libraryVersion = `${library}@${version}`;
+    // delete this version from resolution and ranges
+    delete this.resolution[library];
+    let dependencies = this.ranges[libraryVersion];
+    delete this.ranges[libraryVersion];
+    // mark dependencies as needing recalculating
+    this.queuedRecalculations.push.apply(
+      this.queuedRecalculations,
+      Object.keys(dependencies)
+    );
+    // now remove any orphaned dependencies
+    let orphans = this.getOrphans();
+    _.forEach(orphans, orphan => {
+      // drop if not already dropped
+      if (this.resolution[orphan]) {
+        this.dropVersion(orphan, this.resolution[orphan]);
+      }
+    });
+    // and drop the recalculations for orphaned dependencies
+    _.pullAll(this.queuedRecalculations, orphans);
   }
 
   startDependency(library) {
@@ -36,13 +99,29 @@ class RecursiveSemver {
       });
     }).then(versions => {
       let version = this.maxSatisfying(library, versions);
+      // check if we have a changing resolution that will require a recalculation
+      let currentVersion = this.resolution[library];
+      console.log('library: ' + library);
+      console.log('currentVersion: ' + currentVersion);
+      console.log('version: ' + version);
+      if (currentVersion && currentVersion !== version) {
+        this.dropVersion(library, currentVersion);
+      }
       // record in the resolution
-      // TODO: check if we have a changing resolution that will require a recalculation
       this.resolution[library] = version;
       // now look up sub dependencies for the next pass
       let libraryVersion = `${library}@${version}`;
       if (this.getDependencies) {
+        // check the cache first
+        if (this.cache.dependencies[libraryVersion]) {
+          return [
+            libraryVersion,
+            this.cache.dependencies[libraryVersion]
+          ];
+        }
         return this.getDependencies(library, version).then(dependencies => {
+          // add to the dependencies cache
+          this.cache.dependencies[libraryVersion] = dependencies;
           return [
             libraryVersion,
             dependencies
@@ -66,7 +145,8 @@ class RecursiveSemver {
   startDependencies() {
     let currentDependencies = this.queuedDependencies;
     this.queuedDependencies = [];
-    let libraries = [];
+    let libraries = this.queuedRecalculations;
+    this.queuedRecalculations = [];
     _.forOwn(currentDependencies, (dependencies, parent) => {
       _.forOwn(dependencies, (range, library) => {
         // record the library and range with the parent
@@ -84,7 +164,11 @@ class RecursiveSemver {
       })
     ).then(() => {
       // keep recursing until there no longer any queued dependencies
-      if (Object.keys(this.queuedDependencies).length) {
+      // or libraries to recalculate dependencies for
+      if (
+        Object.keys(this.queuedDependencies).length ||
+        this.queuedRecalculations.length
+      ) {
         return this.startDependencies();
       }
     });
@@ -114,9 +198,9 @@ class RecursiveSemver {
     if (validVersion) {
       return validVersion;
     }
+    // TODO: figure out where the conflict is and see if an earlier version will
+    // satisfy the constraints
     throw new Error(
-      // TODO: figure out where the conflict is and see if an earlier version will
-      // satisfy the constraints
       `Unable to satisfy version constraints: ${library}@${ranges}`
     );
   }

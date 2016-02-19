@@ -208,10 +208,10 @@ describe('RecursiveSemver.prototype.resolve', () => {
     });
 
     describe('with sub constraints that result in recalculations', () => {
-      // TODO: this should initially select test5@0.1.5, but then correct
+      // This should initially select test5@0.1.5, but then correct
       // it to test5@0.1.3, remove the constraints associated with test5@0.1.5
       // and recalculate
-      it.skip('should successfully resolve the version constraints', () => {
+      it('should successfully resolve the version constraints', () => {
         return new RecursiveSemver(
           {
             test5: '^0.1.3',
