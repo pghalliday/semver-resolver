@@ -75,6 +75,42 @@ let repository = {
     '0.1.5': {
       test1: '0.1.5'
     }
+  },
+  test5: {
+    '0.1.1': {
+      test4: '0.1.1'
+    },
+    '0.1.2': {
+      test4: '0.1.2'
+    },
+    '0.1.3': {
+      test4: '0.1.3'
+    },
+    '0.1.4': {
+      test3: '0.1.4',
+      test4: '0.1.4'
+    },
+    '0.1.5': {
+      test3: '0.1.5',
+      test4: '0.1.5'
+    }
+  },
+  test6: {
+    '0.1.1': {
+      test5: '0.1.1'
+    },
+    '0.1.2': {
+      test5: '0.1.2'
+    },
+    '0.1.3': {
+      test5: '0.1.3'
+    },
+    '0.1.4': {
+      test5: '0.1.4'
+    },
+    '0.1.5': {
+      test5: '0.1.5'
+    }
   }
 };
 
@@ -167,6 +203,27 @@ describe('RecursiveSemver.prototype.resolve', () => {
           test1: '0.1.3',
           test2: '0.1.3',
           test3: '0.1.3'
+        });
+      });
+    });
+
+    describe('with sub constraints that result in recalculations', () => {
+      // TODO: this should initially select test5@0.1.5, but then correct
+      // it to test5@0.1.3, remove the constraints associated with test5@0.1.5
+      // and recalculate
+      it.skip('should successfully resolve the version constraints', () => {
+        return new RecursiveSemver(
+          {
+            test5: '^0.1.3',
+            test6: '0.1.3'
+          },
+          getVersions,
+          getDependencies
+        ).resolve().should.eventually.eql({
+          test1: '0.1.3',
+          test4: '0.1.3',
+          test5: '0.1.3',
+          test6: '0.1.3'
         });
       });
     });
