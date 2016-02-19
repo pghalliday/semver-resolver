@@ -58,6 +58,23 @@ let repository = {
       test1: '0.1.5',
       test2: '0.1.5'
     }
+  },
+  test4: {
+    '0.1.1': {
+      test1: '0.1.1'
+    },
+    '0.1.2': {
+      test1: '0.1.2'
+    },
+    '0.1.3': {
+      test1: '0.1.3'
+    },
+    '0.1.4': {
+      test1: '0.1.4'
+    },
+    '0.1.5': {
+      test1: '0.1.5'
+    }
   }
 };
 
@@ -123,7 +140,7 @@ describe('RecursiveSemver.prototype.resolve', () => {
   });
 
   describe('with a callback for dependencies', () => {
-    describe('with resolvable sub constraints', () => {
+    describe('with easily resolvable sub constraints', () => {
       it('should successfully resolve the version constraints', () => {
         return new RecursiveSemver(
           {
@@ -150,6 +167,27 @@ describe('RecursiveSemver.prototype.resolve', () => {
           test1: '0.1.3',
           test2: '0.1.3',
           test3: '0.1.3'
+        });
+      });
+    });
+
+    describe('with constraints that require backtracking', () => {
+      // TODO: this might be difficult as the first pass allows test2@0.1.5
+      // and requires test4@0.1.3. This means the second pass requires test1@^0.1.5
+      // and test1@0.1.3 which conflicts. However the root constraint can be
+      // satisfied if we backtrack to test2@0.1.3 which would then allow test1@^0.1.3
+      it.skip('should successfully resolve the version constraints', () => {
+        return new RecursiveSemver(
+          {
+            test2: '^0.1.3',
+            test4: '0.1.3'
+          },
+          getVersions,
+          getDependencies
+        ).resolve().should.eventually.eql({
+          test1: '0.1.3',
+          test2: '0.1.3',
+          test4: '0.1.3'
         });
       });
     });
