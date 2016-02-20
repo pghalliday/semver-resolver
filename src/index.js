@@ -23,12 +23,15 @@ class RecursiveSemver {
     let knownLibraries = Object.keys(state);
     knownLibraries.forEach(library => {
       let dependencies = state[library].dependencies;
-      if (dependencies) {
-        knownLibraries = _.union(
-          knownLibraries,
-          Object.keys(dependencies)
-        );
-      }
+      // dependencies will always be populated
+      // here because we just finished updating
+      // from the queued constraints - if it isn't
+      // then something probably changed around
+      // the refillQueues/updateConstraints functions
+      knownLibraries = _.union(
+        knownLibraries,
+        Object.keys(dependencies)
+      );
     });
     this.queuedCalculations = _.intersection(
       this.queuedCalculations,
@@ -46,12 +49,15 @@ class RecursiveSemver {
       let dependencies = libraryState.dependencies;
       if (dependencies) {
         _.forEach(Object.keys(dependencies), dependency => {
-          // drop old data for dependency as it should not
+          // drop old data for dependency if we have it
+          // already as it should not
           // be used in calculations anymore
           this.dropLibrary(dependency);
           // queue dependency for recalculation
           // as a constraint has been dropped
-          queuedCalculations.push(library);
+          // but it may still be a dependency
+          // of another library still in the tree
+          queuedCalculations.push(dependency);
         });
       }
     }
@@ -67,27 +73,28 @@ class RecursiveSemver {
     // apply now is invalid anyway
     if (libraryState) {
       let version = libraryState.version;
-      let newDependencies = cachedDependencies[library][version];
-      let oldDependencies = libraryState.dependencies;
+      let dependencies = cachedDependencies[library][version];
       let queuedCalculations = this.queuedCalculations;
-      if (oldDependencies !== newDependencies) {
-        let dependenciesToInvalidate = Object.keys(newDependencies);
-        if (oldDependencies) {
-          dependenciesToInvalidate = _.union(
-            dependenciesToInvalidate,
-            Object.keys(oldDependencies)
-          );
-        }
-        dependenciesToInvalidate.forEach(dependency => {
-          // drop old data for dependency as it should not
-          // be used in calculations anymore
-          this.dropLibrary(dependency);
-          // queue dependency for recalculation
-          // as a constraint has been dropped
-          queuedCalculations.push(dependency);
-        });
-        libraryState.dependencies = newDependencies;
-      }
+      libraryState.dependencies = dependencies;
+      // We don't need to worry about the possibility that there were already
+      // dependencies attached to the library. It should
+      // never happen as the only way to get into the update
+      // queue is from the calculation queue and the only way
+      // into the caclulation queue is on initialisation or
+      // immediately after being dropped from the state. Thus
+      // all these dependency constraints are new and none
+      // will be dropped.
+      Object.keys(dependencies).forEach(dependency => {
+        // drop old data for dependency if we have it
+        // already as it should not
+        // be used in calculations anymore
+        this.dropLibrary(dependency);
+        // queue dependency for recalculation
+        // as a constraint has been dropped
+        // but it may still be a dependency
+        // of another library still in the tree
+        queuedCalculations.push(dependency);
+      });
     }
   }
 
