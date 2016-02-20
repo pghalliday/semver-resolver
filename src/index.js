@@ -3,183 +3,130 @@
 let semver = require('semver');
 let _ = require('lodash');
 
-let depth = 0;
 let maskLibrary = (libraries, tree, library) => {
-  depth++;
-  console.log('%d: before:', depth);
-  console.log(libraries);
-  console.log('%d: tree:', depth);
-  console.log(tree);
-  console.log('%d: library:', depth);
-  console.log(library);
   _.pull(libraries, library);
   _.forEach(tree[library], dependency => {
     maskLibrary(libraries, tree, dependency);
   });
-  console.log('%d: after:', depth);
-  console.log(libraries);
-  depth--;
 };
+
+let libraryVersionToKey = (library, version) => `${library}@${version}`;
+let libraryVersionFromKey = libraryVersion => libraryVersion.split('@');
 
 class RecursiveSemver {
   constructor(rootDependencies, getVersions, getDependencies) {
     this.getVersions = getVersions;
     this.getDependencies = getDependencies;
-    this.queuedDependencies = {};
-    this.queuedRecalculations = [];
+    this.queuedCalculations = [];
+    this.queuedConstraintUpdates = [];
     this.resolution = {};
-    this.ranges = {};
-    this.cache = {
-      versions: {},
-      dependencies: {}
-    };
-    this.queueDependencies('root', rootDependencies);
+    this.constraints = {};
+    this.cachedVersions = {};
+    this.cachedDependencies = {};
+    this.updateConstraints('root', rootDependencies);
   }
 
-  queueDependencies(parent, dependencies) {
-    this.queuedDependencies[parent] = dependencies;
+  constraintIsNew(library, range) {
+    let isNew = true;
+    let constraints = this.constraints;
+    _.forOwn(constraints, dependencies => {
+      _.forOwn(dependencies, (r, l) => {
+        // TODO: this could be improved by checking if the new range
+        // is fully contained by an existing range. Maybe this wouldn't
+        // be an optimisation though if the check takes longer than the
+        // calculation we're trying to avoid
+        if (l === library && r === range) {
+          isNew = false;
+          return isNew;
+        }
+      });
+      return isNew;
+    });
+    return isNew;
   }
 
-  rangesToTree() {
+  constraintsToTree() {
     return _.mapKeys(
       _.mapValues(
-        this.ranges,
+        this.constraints,
         dependencies => {
           return Object.keys(dependencies);
         }
       ),
-      (value, key) => {
-        return key.split('@')[0];
+      (dependencies, libraryVersion) => {
+        return libraryVersionFromKey(libraryVersion)[0];
       }
     );
   }
 
   getOrphans() {
-    let tree = this.rangesToTree();
-    let libraries = Object.keys(this.resolution);
+    let tree = this.constraintsToTree();
+    let libraries = Object.keys(tree);
     maskLibrary(libraries, tree, 'root');
     return libraries;
   }
 
-  dropVersion(library, version) {
-    let libraryVersion = `${library}@${version}`;
-    // delete this version from resolution and ranges
-    delete this.resolution[library];
-    let dependencies = this.ranges[libraryVersion];
-    delete this.ranges[libraryVersion];
-    // mark dependencies as needing recalculating
-    this.queuedRecalculations.push.apply(
-      this.queuedRecalculations,
-      Object.keys(dependencies)
-    );
-    // now remove any orphaned dependencies
-    let orphans = this.getOrphans();
-    _.forEach(orphans, orphan => {
-      // drop if not already dropped
-      if (this.resolution[orphan]) {
-        this.dropVersion(orphan, this.resolution[orphan]);
-      }
-    });
-    // and drop the recalculations for orphaned dependencies
-    _.pullAll(this.queuedRecalculations, orphans);
-  }
-
-  startDependency(library) {
-    return Promise.resolve().then(() => {
-      // check the cache first
-      if (this.cache.versions[library]) {
-        return this.cache.versions[library];
-      }
-      return this.getVersions(library).then(versions => {
-        // shallow copy and sort the versions descending so they can be scanned
-        let sortedVersions = versions.sort(semver.rcompare);
-        // add to the versions cache so we don't look it up again
-        this.cache.versions[library] = sortedVersions;
-        return sortedVersions;
-      });
-    }).then(versions => {
-      let version = this.maxSatisfying(library, versions);
-      // check if we have a changing resolution that will require a recalculation
-      let currentVersion = this.resolution[library];
-      console.log('library: ' + library);
-      console.log('currentVersion: ' + currentVersion);
-      console.log('version: ' + version);
-      if (currentVersion && currentVersion !== version) {
-        this.dropVersion(library, currentVersion);
-      }
-      // record in the resolution
-      this.resolution[library] = version;
-      // now look up sub dependencies for the next pass
-      let libraryVersion = `${library}@${version}`;
-      if (this.getDependencies) {
-        // check the cache first
-        if (this.cache.dependencies[libraryVersion]) {
-          return [
-            libraryVersion,
-            this.cache.dependencies[libraryVersion]
-          ];
+  dropLibrary(library) {
+    let queuedCalculations = this.queuedCalculations;
+    // remove from calculation queue if already added
+    _.pull(queuedCalculations, library);
+    let resolution = this.resolution;
+    let version = resolution[library];
+    if (version) {
+      let constraints = this.constraints;
+      let libraryVersion = libraryVersionToKey(library, version);
+      // remove from resolution
+      delete resolution[library];
+      let dependencies = constraints[libraryVersion];
+      // remove from constraints
+      delete constraints[libraryVersion];
+      // mark any dependencies for recalculation
+      // as a constraint has been dropped
+      _.forEach(Object.keys(dependencies), library => {
+        let version = resolution[library];
+        if (version && !_.includes(queuedCalculations, library)) {
+          queuedCalculations.push(library);
         }
-        return this.getDependencies(library, version).then(dependencies => {
-          // add to the dependencies cache
-          this.cache.dependencies[libraryVersion] = dependencies;
-          return [
-            libraryVersion,
-            dependencies
-          ];
-        });
-      }
-      // no getDependencies callback so return empty dependencies
-      return [
-        libraryVersion,
-        {}
-      ];
-    }).then(libraryVersionAndDependencies => {
-      // add the dependencies to the queue for the next pass
-      this.queueDependencies(
-        libraryVersionAndDependencies[0],
-        libraryVersionAndDependencies[1]
-      );
-    });
-  }
-
-  startDependencies() {
-    let currentDependencies = this.queuedDependencies;
-    this.queuedDependencies = [];
-    let libraries = this.queuedRecalculations;
-    this.queuedRecalculations = [];
-    _.forOwn(currentDependencies, (dependencies, parent) => {
-      _.forOwn(dependencies, (range, library) => {
-        // record the library and range with the parent
-        let ranges = this.ranges[parent] || {};
-        this.ranges[parent] = ranges;
-        ranges[library] = range;
-        // add to libraries array
-        libraries.push(library);
       });
-    });
-    libraries = _.uniq(libraries);
-    return Promise.all(
-      _.map(libraries, library => {
-        return this.startDependency(library);
-      })
-    ).then(() => {
-      // keep recursing until there no longer any queued dependencies
-      // or libraries to recalculate dependencies for
-      if (
-        Object.keys(this.queuedDependencies).length ||
-        this.queuedRecalculations.length
-      ) {
-        return this.startDependencies();
-      }
-    });
+    }
   }
 
-  maxSatisfying(library, versions) {
+  updateConstraints(parent, dependencies) {
+    let constraints = this.constraints;
+    let queuedCalculations = this.queuedCalculations;
+    _.forOwn(dependencies, (range, library) => {
+      // TODO: is it faster to dedupe now or to just add everything
+      // and dedupe with _.uniq before processing the queue?
+      if (!_.includes(queuedCalculations, library)) {
+        // TODO: is this check really an optimisation?
+        // wouldn't it be quicker just to do the calculation
+        // again than to scan the constraints?
+        if (this.constraintIsNew(library, range)) {
+          // remove the current calculation from
+          // the resolution if already calculated
+          this.dropLibrary(library);
+          // queue dependency for calculation
+          queuedCalculations.push(library);
+        }
+      }
+    });
+    constraints[parent] = dependencies;
+    // clean up any orphans left over from dropping
+    // invalidated calculations
+    let orphans = this.getOrphans();
+    while (orphans.length) {
+      orphans.forEach(this.dropLibrary.bind(this));
+      orphans = this.getOrphans();
+    }
+  }
+
+  maxSatisfying(library) {
+    let versions = this.cachedVersions[library];
     let validVersion;
     let ranges = [];
-    _.forOwn(this.ranges, value => {
-      if (value[library]) {
-        ranges.push(value[library]);
+    _.forOwn(this.constraints, dependencies => {
+      if (dependencies[library]) {
+        ranges.push(dependencies[library]);
       }
     });
     _.forEach(versions, version => {
@@ -205,10 +152,86 @@ class RecursiveSemver {
     );
   }
 
-  resolve() {
-    return this.startDependencies().then(() => {
-      return this.resolution;
+  cacheVersions() {
+    let cachedVersions = this.cachedVersions;
+    let librariesAlreadyCached = Object.keys(cachedVersions);
+    let queuedCalculations = this.queuedCalculations;
+    let librariesToCache = _.difference(
+      queuedCalculations, librariesAlreadyCached
+    );
+    return Promise.all(librariesToCache.map(this.getVersions))
+    .then(versionsArray => {
+      versionsArray.forEach((versions, index) => {
+        cachedVersions[librariesToCache[index]] =
+          versions.slice(0).sort(semver.rcompare);
+      });
     });
+  }
+
+  resolveVersions() {
+    let queuedCalculations = this.queuedCalculations;
+    this.queuedCalculations = [];
+    let resolution = this.resolution;
+    let queuedConstraintUpdates = this.queuedConstraintUpdates;
+    queuedCalculations.forEach(library => {
+      let version = this.maxSatisfying(library);
+      let libraryVersion = libraryVersionToKey(library, version);
+      resolution[library] = version;
+      if (!_.includes(queuedConstraintUpdates, libraryVersion)) {
+        queuedConstraintUpdates.push(libraryVersion);
+      }
+    });
+  }
+
+  cacheDependencies() {
+    let cachedDependencies = this.cachedDependencies;
+    let dependenciesAlreadyCached = Object.keys(cachedDependencies);
+    let queuedConstraintUpdates = this.queuedConstraintUpdates;
+    let dependenciesToCache = _.difference(
+      queuedConstraintUpdates,
+      dependenciesAlreadyCached
+    );
+    return Promise.all(dependenciesToCache.map(
+      libraryVersion => {
+        return this.getDependencies.apply(
+          this,
+          libraryVersionFromKey(libraryVersion)
+        );
+      }
+    ))
+    .then(dependenciesArray => {
+      dependenciesArray.forEach((dependencies, index) => {
+        cachedDependencies[dependenciesToCache[index]] = dependencies;
+      });
+    });
+  }
+
+  refillQueues() {
+    let queuedConstraintUpdates = this.queuedConstraintUpdates;
+    this.queuedConstraintUpdates = [];
+    let cachedDependencies = this.cachedDependencies;
+    queuedConstraintUpdates.forEach(libraryVersion => {
+      this.updateConstraints(libraryVersion, cachedDependencies[libraryVersion]);
+    });
+  }
+
+  recurse() {
+    if (this.queuedCalculations.length) {
+      return this.start();
+    }
+  }
+
+  start() {
+    return this.cacheVersions()
+    .then(this.resolveVersions.bind(this))
+    .then(this.cacheDependencies.bind(this))
+    .then(this.refillQueues.bind(this))
+    .then(this.recurse.bind(this));
+  }
+
+  resolve() {
+    return this.start()
+    .then(() => this.resolution);
   }
 }
 

@@ -130,122 +130,121 @@ let getDependencies = (library, version) => {
 };
 
 describe('RecursiveSemver.prototype.resolve', () => {
-  describe('with no callback for dependencies', () => {
-    describe('with constraints that can be resolved', () => {
-      it('should successfully resolve the version constraints', () => {
-        return new RecursiveSemver(
-          {
-            test1: '^0.1.1',
-            test2: '0.1.2'
-          },
-          getVersions
-        ).resolve().should.eventually.eql({
-          test1: '0.1.5',
+  describe('with 1 level of constraints that can be resolved', () => {
+    it('should successfully resolve the version constraints', () => {
+      return new RecursiveSemver(
+        {
+          test1: '^0.1.1',
           test2: '0.1.2'
-        });
-      });
-    });
-
-    describe('with constraints that cannot be resolved', () => {
-      it('should fail with an error', () => {
-        return new RecursiveSemver(
-          {
-            test1: '^0.1.1',
-            test2: '^0.2.0'
-          },
-          getVersions
-        ).resolve().should.be.rejectedWith(
-          'Unable to satisfy version constraints: test2@^0.2.0'
-        );
-      });
-    });
-
-    describe('with an unknown library', () => {
-      it('should fail with an error', () => {
-        return new RecursiveSemver(
-          {
-            test1: '^0.1.1',
-            test9: '^0.1.1'
-          },
-          getVersions
-        ).resolve().should.be.rejectedWith(
-          'No such library: test9'
-        );
+        },
+        getVersions,
+        getDependencies
+      ).resolve().should.eventually.eql({
+        test1: '0.1.5',
+        test2: '0.1.2'
       });
     });
   });
 
-  describe('with a callback for dependencies', () => {
-    describe('with easily resolvable sub constraints', () => {
-      it('should successfully resolve the version constraints', () => {
-        return new RecursiveSemver(
-          {
-            test2: '^0.1.1'
-          },
-          getVersions,
-          getDependencies
-        ).resolve().should.eventually.eql({
-          test1: '0.1.5',
-          test2: '0.1.5'
-        });
+  describe('with constraints that cannot be resolved', () => {
+    it('should fail with an error', () => {
+      return new RecursiveSemver(
+        {
+          test1: '^0.1.1',
+          test2: '^0.2.0'
+        },
+        getVersions,
+        getDependencies
+      ).resolve().should.be.rejectedWith(
+        'Unable to satisfy version constraints: test2@^0.2.0'
+      );
+    });
+  });
+
+  describe('with an unknown library', () => {
+    it('should fail with an error', () => {
+      return new RecursiveSemver(
+        {
+          test1: '^0.1.1',
+          test9: '^0.1.1'
+        },
+        getVersions,
+        getDependencies
+      ).resolve().should.be.rejectedWith(
+        'No such library: test9'
+      );
+    });
+  });
+
+  describe('with easily resolvable sub constraints', () => {
+    it('should successfully resolve the version constraints', () => {
+      return new RecursiveSemver(
+        {
+          test2: '^0.1.1'
+        },
+        getVersions,
+        getDependencies
+      ).resolve().should.eventually.eql({
+        test1: '0.1.5',
+        test2: '0.1.5'
       });
     });
+  });
 
-    describe('with overlapping constraints', () => {
-      it('should successfully resolve the version constraints', () => {
-        return new RecursiveSemver(
-          {
-            test3: '0.1.3'
-          },
-          getVersions,
-          getDependencies
-        ).resolve().should.eventually.eql({
-          test1: '0.1.3',
-          test2: '0.1.3',
+  describe('with overlapping constraints', () => {
+    it('should successfully resolve the version constraints', () => {
+      return new RecursiveSemver(
+        {
           test3: '0.1.3'
-        });
+        },
+        getVersions,
+        getDependencies
+      ).resolve().should.eventually.eql({
+        test1: '0.1.3',
+        test2: '0.1.3',
+        test3: '0.1.3'
       });
     });
+  });
 
-    describe('with sub constraints that result in recalculations', () => {
-      // This should initially select test5@0.1.5, but then correct
-      // it to test5@0.1.3, remove the constraints associated with test5@0.1.5
-      // and recalculate
-      it('should successfully resolve the version constraints', () => {
-        return new RecursiveSemver(
-          {
-            test5: '^0.1.3',
-            test6: '0.1.3'
-          },
-          getVersions,
-          getDependencies
-        ).resolve().should.eventually.eql({
-          test1: '0.1.3',
-          test4: '0.1.3',
-          test5: '0.1.3',
+  describe('with sub constraints that result in recalculations', () => {
+    // This should initially select test5@0.1.5, but then correct
+    // it to test5@0.1.3, remove the constraints associated with test5@0.1.5
+    // and recalculate
+    it('should successfully resolve the version constraints', () => {
+      return new RecursiveSemver(
+        {
+          test5: '^0.1.3',
           test6: '0.1.3'
-        });
+        },
+        getVersions,
+        getDependencies
+      ).resolve().should.eventually.eql({
+        test1: '0.1.3',
+        test4: '0.1.3',
+        test5: '0.1.3',
+        test6: '0.1.3'
       });
     });
+  });
 
-    describe('with constraints that require backtracking', () => {
-      // TODO: this might be difficult as the first pass allows test2@0.1.5
-      // and requires test4@0.1.3. This means the second pass requires test1@^0.1.5
-      // and test1@0.1.3 which conflicts. However the root constraint can be
-      // satisfied if we backtrack to test2@0.1.3 which would then allow test1@^0.1.3
-      it.skip('should successfully resolve the version constraints', () => {
-        return new RecursiveSemver(
-          {
-            test2: '^0.1.3',
-            test4: '0.1.3'
-          },
-          getVersions,
-          getDependencies
-        ).resolve().should.eventually.eql({
-          test1: '0.1.3',
-          test2: '0.1.3',
+  describe('with constraints that require backtracking', () => {
+    // TODO: this might be difficult as the first pass allows test2@0.1.5
+    // and requires test4@0.1.3. This means the second pass requires test1@^0.1.5
+    // and test1@0.1.3 which conflicts. However the root constraint can be
+    // satisfied if we backtrack to test2@0.1.3 which would then allow test1@^0.1.3
+    it.skip('should successfully resolve the version constraints', () => {
+      return new RecursiveSemver(
+        {
+          test2: '^0.1.3',
           test4: '0.1.3'
-        });
+        },
+        getVersions,
+        getDependencies
+      ).resolve().should.eventually.eql({
+        test1: '0.1.3',
+        test2: '0.1.3',
+        test4: '0.1.3'
       });
     });
   });
