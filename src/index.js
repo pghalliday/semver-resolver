@@ -3,130 +3,106 @@
 let semver = require('semver');
 let _ = require('lodash');
 
-let maskLibrary = (libraries, tree, library) => {
-  _.pull(libraries, library);
-  _.forEach(tree[library], dependency => {
-    maskLibrary(libraries, tree, dependency);
-  });
-};
-
-let libraryVersionToKey = (library, version) => `${library}@${version}`;
-let libraryVersionFromKey = libraryVersion => libraryVersion.split('@');
-
 class RecursiveSemver {
-  constructor(rootDependencies, getVersions, getDependencies) {
+  constructor(name, version, dependencies, getVersions, getDependencies) {
     this.getVersions = getVersions;
     this.getDependencies = getDependencies;
-    this.queuedCalculations = [];
+    this.root = name;
+    let state = this.state = {};
+    let rootState = state[name] = {};
+    rootState.version = version;
+    rootState.dependencies = dependencies;
+    this.queuedCalculations = Object.keys(dependencies);
     this.queuedConstraintUpdates = [];
-    this.resolution = {};
-    this.constraints = {};
     this.cachedVersions = {};
     this.cachedDependencies = {};
-    this.updateConstraints('root', rootDependencies);
   }
 
-  constraintIsNew(library, range) {
-    let isNew = true;
-    let constraints = this.constraints;
-    _.forOwn(constraints, dependencies => {
-      _.forOwn(dependencies, (r, l) => {
-        // TODO: this could be improved by checking if the new range
-        // is fully contained by an existing range. Maybe this wouldn't
-        // be an optimisation though if the check takes longer than the
-        // calculation we're trying to avoid
-        if (l === library && r === range) {
-          isNew = false;
-          return isNew;
-        }
-      });
-      return isNew;
-    });
-    return isNew;
-  }
-
-  constraintsToTree() {
-    return _.mapKeys(
-      _.mapValues(
-        this.constraints,
-        dependencies => {
-          return Object.keys(dependencies);
-        }
-      ),
-      (dependencies, libraryVersion) => {
-        return libraryVersionFromKey(libraryVersion)[0];
+  cleanQueuedCalculations() {
+    let state = this.state;
+    let knownLibraries = Object.keys(state);
+    knownLibraries.forEach(library => {
+      let dependencies = state[library].dependencies;
+      if (dependencies) {
+        knownLibraries = _.union(
+          knownLibraries,
+          Object.keys(dependencies)
+        );
       }
+    });
+    this.queuedCalculations = _.intersection(
+      this.queuedCalculations,
+      knownLibraries
     );
-  }
-
-  getOrphans() {
-    let tree = this.constraintsToTree();
-    let libraries = Object.keys(tree);
-    maskLibrary(libraries, tree, 'root');
-    return libraries;
   }
 
   dropLibrary(library) {
     let queuedCalculations = this.queuedCalculations;
-    // remove from calculation queue if already added
-    _.pull(queuedCalculations, library);
-    let resolution = this.resolution;
-    let version = resolution[library];
-    if (version) {
-      let constraints = this.constraints;
-      let libraryVersion = libraryVersionToKey(library, version);
-      // remove from resolution
-      delete resolution[library];
-      let dependencies = constraints[libraryVersion];
-      // remove from constraints
-      delete constraints[libraryVersion];
-      // mark any dependencies for recalculation
-      // as a constraint has been dropped
-      _.forEach(Object.keys(dependencies), library => {
-        let version = resolution[library];
-        if (version && !_.includes(queuedCalculations, library)) {
+    let state = this.state;
+    let libraryState = state[library];
+    if (libraryState) {
+      // remove from state
+      delete state[library];
+      let dependencies = libraryState.dependencies;
+      if (dependencies) {
+        _.forEach(Object.keys(dependencies), dependency => {
+          // drop old data for dependency as it should not
+          // be used in calculations anymore
+          this.dropLibrary(dependency);
+          // queue dependency for recalculation
+          // as a constraint has been dropped
           queuedCalculations.push(library);
-        }
-      });
+        });
+      }
     }
   }
 
-  updateConstraints(parent, dependencies) {
-    let constraints = this.constraints;
-    let queuedCalculations = this.queuedCalculations;
-    _.forOwn(dependencies, (range, library) => {
-      // TODO: is it faster to dedupe now or to just add everything
-      // and dedupe with _.uniq before processing the queue?
-      if (!_.includes(queuedCalculations, library)) {
-        // TODO: is this check really an optimisation?
-        // wouldn't it be quicker just to do the calculation
-        // again than to scan the constraints?
-        if (this.constraintIsNew(library, range)) {
-          // remove the current calculation from
-          // the resolution if already calculated
-          this.dropLibrary(library);
-          // queue dependency for calculation
-          queuedCalculations.push(library);
+  updateConstraints(library) {
+    let state = this.state;
+    let cachedDependencies = this.cachedDependencies;
+    let libraryState = state[library];
+    // check if this library is still in the state.
+    // it may already have been dropped in an earlier
+    // update, in which case the information we would
+    // apply now is invalid anyway
+    if (libraryState) {
+      let version = libraryState.version;
+      let newDependencies = cachedDependencies[library][version];
+      let oldDependencies = libraryState.dependencies;
+      let queuedCalculations = this.queuedCalculations;
+      if (oldDependencies !== newDependencies) {
+        let dependenciesToInvalidate = Object.keys(newDependencies);
+        if (oldDependencies) {
+          dependenciesToInvalidate = _.union(
+            dependenciesToInvalidate,
+            Object.keys(oldDependencies)
+          );
         }
+        dependenciesToInvalidate.forEach(dependency => {
+          // drop old data for dependency as it should not
+          // be used in calculations anymore
+          this.dropLibrary(dependency);
+          // queue dependency for recalculation
+          // as a constraint has been dropped
+          queuedCalculations.push(dependency);
+        });
+        libraryState.dependencies = newDependencies;
       }
-    });
-    constraints[parent] = dependencies;
-    // clean up any orphans left over from dropping
-    // invalidated calculations
-    let orphans = this.getOrphans();
-    while (orphans.length) {
-      orphans.forEach(this.dropLibrary.bind(this));
-      orphans = this.getOrphans();
     }
   }
 
   maxSatisfying(library) {
+    let state = this.state;
     let versions = this.cachedVersions[library];
     let validVersion;
     let ranges = [];
-    _.forOwn(this.constraints, dependencies => {
-      if (dependencies[library]) {
-        ranges.push(dependencies[library]);
+    _.forOwn(state, libraryState => {
+      let dependencies = libraryState.dependencies;
+      if (dependencies) {
+        let range = dependencies[library];
+        if (range) {
+          ranges.push(range);
+        }
       }
     });
     _.forEach(versions, version => {
@@ -171,48 +147,57 @@ class RecursiveSemver {
   resolveVersions() {
     let queuedCalculations = this.queuedCalculations;
     this.queuedCalculations = [];
-    let resolution = this.resolution;
+    let state = this.state;
     let queuedConstraintUpdates = this.queuedConstraintUpdates;
     queuedCalculations.forEach(library => {
       let version = this.maxSatisfying(library);
-      let libraryVersion = libraryVersionToKey(library, version);
-      resolution[library] = version;
-      if (!_.includes(queuedConstraintUpdates, libraryVersion)) {
-        queuedConstraintUpdates.push(libraryVersion);
-      }
+      state[library] = state[library] || {};
+      state[library].version = version;
+      queuedConstraintUpdates.push(library);
     });
   }
 
   cacheDependencies() {
+    let state = this.state;
     let cachedDependencies = this.cachedDependencies;
-    let dependenciesAlreadyCached = Object.keys(cachedDependencies);
     let queuedConstraintUpdates = this.queuedConstraintUpdates;
-    let dependenciesToCache = _.difference(
-      queuedConstraintUpdates,
-      dependenciesAlreadyCached
-    );
+    let dependenciesToCache = queuedConstraintUpdates.filter(library => {
+      let version = state[library].version;
+      let versions = cachedDependencies[library];
+      if (versions) {
+        if (versions[version]) {
+          return false;
+        }
+      }
+      return true;
+    });
     return Promise.all(dependenciesToCache.map(
-      libraryVersion => {
-        return this.getDependencies.apply(
-          this,
-          libraryVersionFromKey(libraryVersion)
+      library => {
+        return this.getDependencies(
+          library,
+          state[library].version
         );
       }
     ))
     .then(dependenciesArray => {
       dependenciesArray.forEach((dependencies, index) => {
-        cachedDependencies[dependenciesToCache[index]] = dependencies;
+        let library = dependenciesToCache[index];
+        cachedDependencies[library] = cachedDependencies[library] || {};
+        cachedDependencies[library][state[library].version] = dependencies;
       });
     });
   }
 
   refillQueues() {
-    let queuedConstraintUpdates = this.queuedConstraintUpdates;
+    let queuedConstraintUpdates = _.uniq(this.queuedConstraintUpdates);
     this.queuedConstraintUpdates = [];
-    let cachedDependencies = this.cachedDependencies;
-    queuedConstraintUpdates.forEach(libraryVersion => {
-      this.updateConstraints(libraryVersion, cachedDependencies[libraryVersion]);
+    queuedConstraintUpdates.forEach(library => {
+      this.updateConstraints(library);
     });
+    // clean up the queued calculations
+    // as some of the libraries may no longer
+    // even be in dependencies
+    this.cleanQueuedCalculations();
   }
 
   recurse() {
@@ -231,7 +216,11 @@ class RecursiveSemver {
 
   resolve() {
     return this.start()
-    .then(() => this.resolution);
+    .then(() => {
+      let resolution = _.mapValues(this.state, value => value.version);
+      delete resolution[this.root];
+      return resolution;
+    });
   }
 }
 

@@ -133,6 +133,8 @@ describe('RecursiveSemver.prototype.resolve', () => {
   describe('with 1 level of constraints that can be resolved', () => {
     it('should successfully resolve the version constraints', () => {
       return new RecursiveSemver(
+        'test0',
+        '0.0.0',
         {
           test1: '^0.1.1',
           test2: '0.1.2'
@@ -149,6 +151,8 @@ describe('RecursiveSemver.prototype.resolve', () => {
   describe('with constraints that cannot be resolved', () => {
     it('should fail with an error', () => {
       return new RecursiveSemver(
+        'test0',
+        '0.0.0',
         {
           test1: '^0.1.1',
           test2: '^0.2.0'
@@ -164,6 +168,8 @@ describe('RecursiveSemver.prototype.resolve', () => {
   describe('with an unknown library', () => {
     it('should fail with an error', () => {
       return new RecursiveSemver(
+        'test0',
+        '0.0.0',
         {
           test1: '^0.1.1',
           test9: '^0.1.1'
@@ -179,6 +185,8 @@ describe('RecursiveSemver.prototype.resolve', () => {
   describe('with easily resolvable sub constraints', () => {
     it('should successfully resolve the version constraints', () => {
       return new RecursiveSemver(
+        'test0',
+        '0.0.0',
         {
           test2: '^0.1.1'
         },
@@ -194,6 +202,8 @@ describe('RecursiveSemver.prototype.resolve', () => {
   describe('with overlapping constraints', () => {
     it('should successfully resolve the version constraints', () => {
       return new RecursiveSemver(
+        'test0',
+        '0.0.0',
         {
           test3: '0.1.3'
         },
@@ -213,6 +223,8 @@ describe('RecursiveSemver.prototype.resolve', () => {
     // and recalculate
     it('should successfully resolve the version constraints', () => {
       return new RecursiveSemver(
+        'test0',
+        '0.0.0',
         {
           test5: '^0.1.3',
           test6: '0.1.3'
@@ -235,6 +247,8 @@ describe('RecursiveSemver.prototype.resolve', () => {
     // satisfied if we backtrack to test2@0.1.3 which would then allow test1@^0.1.3
     it.skip('should successfully resolve the version constraints', () => {
       return new RecursiveSemver(
+        'test0',
+        '0.0.0',
         {
           test2: '^0.1.3',
           test4: '0.1.3'
