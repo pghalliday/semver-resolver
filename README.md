@@ -37,7 +37,7 @@ let rs = new RecursiveSemver(
 
 `#resolve` returns a promise for the resolved list of dependencies and their versions, or an error if the constraints cannot be resolved.
 
-```
+```javascript
 rs.resolve.then(
   resolution => {
 
