@@ -1,5 +1,11 @@
 # recursive-semver
-Library to calculate versions for a dependency tree of libraries that use semver but do not allow more than one version of a library to be present in the calculation
+
+[![Build Status](https://travis-ci.org/pghalliday/recursive-semver.svg?branch=master)](https://travis-ci.org/pghalliday/recursive-semver)
+[![Coverage Status](https://coveralls.io/repos/github/pghalliday/recursive-semver/badge.svg?branch=master)](https://coveralls.io/github/pghalliday/recursive-semver?branch=master)
+[![Dependency Status](https://david-dm.org/pghalliday/recursive-semver.svg)](https://david-dm.org/pghalliday/recursive-semver)
+[![devDependency Status](https://david-dm.org/pghalliday/recursive-semver/dev-status.svg)](https://david-dm.org/pghalliday/recursive-semver#info=devDependencies)
+
+Calculate versions for a dependency tree of libraries that use semver but do not allow more than one version of a library to be present in the calculation
 
 ## Usage
 
