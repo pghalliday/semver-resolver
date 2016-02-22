@@ -201,4 +201,32 @@ describe('RecursiveSemver.prototype.resolve', () => {
       });
     });
   });
+
+  describe('with backtracking but still cannot be resolved', () => {
+    beforeEach(() => {
+      this.repository = new Repository('backtracking-impossible-constraints');
+    });
+
+    // this is difficult as the first pass allows test2@0.1.1
+    // and requires test3@0.1.0. This means the second pass requires test1@^0.1.1
+    // and test1@0.1.0 which conflicts. However the root constraint might be
+    // satisfied if we backtrack to test2@0.1.0 but this also requires test1@^0.1.1
+    // so the constraints cannot be resolved
+    it('should be rejected', () => {
+      return new RecursiveSemver(
+        'test0',
+        '0.0.0',
+        {
+          test2: '^0.1.0',
+          test3: '0.1.0'
+        },
+        this.repository.getVersions.bind(this.repository),
+        this.repository.getDependencies.bind(this.repository)
+      ).resolve().should.be.rejectedWith(
+        'Unable to satisfy backtracked version constraint: ' +
+        'test2@<0.1.0 from test3@0.1.0 due to shared ' +
+        'constraint on test1'
+      );
+    });
+  });
 });

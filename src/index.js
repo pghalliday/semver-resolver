@@ -172,7 +172,7 @@ class RecursiveSemver {
           let constrainingState = state[constrainingParent];
           let constrainedState = state[parent];
           constrainingState.dependencies[parent] = {
-            range: `< ${constrainedState.version}`,
+            range: `<${constrainedState.version}`,
             backtrackedDueTo: library
           };
           // drop old data for dependency if we have it
