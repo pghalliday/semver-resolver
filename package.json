@@ -1,7 +1,7 @@
 {
   "name": "recursive-semver",
   "version": "1.0.0",
-  "description": "Library to calculate versions for a dependency tree of libraries that use semver but do not allow more than one version of a library to be present in the calculation",
+  "description": "Calculate versions for a dependency tree of libraries that use semver but do not allow more than one version of a library to be present in the calculation",
   "main": "src/index.js",
   "scripts": {
     "mocha": "mocha --recursive --reporter spec",
