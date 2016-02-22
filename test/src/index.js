@@ -160,7 +160,7 @@ describe('RecursiveSemver.prototype.resolve', () => {
         getVersions,
         getDependencies
       ).resolve().should.be.rejectedWith(
-        'Unable to satisfy version constraints: test2@^0.2.0'
+        'Unable to satisfy version constraint: test2@^0.2.0 from test0@0.0.0'
       );
     });
   });
@@ -241,11 +241,11 @@ describe('RecursiveSemver.prototype.resolve', () => {
   });
 
   describe('with constraints that require backtracking', () => {
-    // TODO: this might be difficult as the first pass allows test2@0.1.5
+    // this is difficult as the first pass allows test2@0.1.5
     // and requires test4@0.1.3. This means the second pass requires test1@^0.1.5
     // and test1@0.1.3 which conflicts. However the root constraint can be
     // satisfied if we backtrack to test2@0.1.3 which would then allow test1@^0.1.3
-    it.skip('should successfully resolve the version constraints', () => {
+    it('should successfully resolve the version constraints', () => {
       return new RecursiveSemver(
         'test0',
         '0.0.0',

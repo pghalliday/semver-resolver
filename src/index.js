@@ -11,7 +11,11 @@ class RecursiveSemver {
     let state = this.state = {};
     let rootState = state[name] = {};
     rootState.version = version;
-    rootState.dependencies = dependencies;
+    rootState.dependencies = _.mapValues(dependencies, range => {
+      return {
+        range: range
+      };
+    });
     this.queuedCalculations = Object.keys(dependencies);
     this.queuedConstraintUpdates = [];
     this.cachedVersions = {};
@@ -101,38 +105,94 @@ class RecursiveSemver {
   maxSatisfying(library) {
     let state = this.state;
     let versions = this.cachedVersions[library];
-    let validVersion;
-    let ranges = [];
-    _.forOwn(state, libraryState => {
+    let queuedCalculations = this.queuedCalculations;
+    let dependencyLibraries = {};
+    // first collect all the constraints and the max versions
+    // satisfying them, keyed by the parent that adds the constraint
+    _.forOwn(state, (libraryState, parent) => {
       let dependencies = libraryState.dependencies;
       if (dependencies) {
-        let range = dependencies[library];
-        if (range) {
-          ranges.push(range);
+        let dependencyLibrary = dependencies[library];
+        if (dependencyLibrary) {
+          if (!dependencyLibrary.maxSatisfying) {
+            let range = dependencyLibrary.range;
+            let maxSatisfying = semver.maxSatisfying(versions, range);
+            if (maxSatisfying === null) {
+              let backtrackedDueTo = dependencyLibrary.backtrackedDueTo;
+              if (backtrackedDueTo) {
+                throw new Error(
+                  `Unable to satisfy backtracked version constraint: ` +
+                  `${library}@${range} from ` +
+                  `${parent}@${libraryState.version} due to shared ` +
+                  `constraint on ${backtrackedDueTo}`
+                );
+              } else {
+                throw new Error(
+                  `Unable to satisfy version constraint: ` +
+                  `${library}@${range} from ` +
+                  `${parent}@${libraryState.version}`
+                );
+              }
+            }
+            dependencyLibrary.maxSatisfying = maxSatisfying;
+          }
+          dependencyLibraries[parent] = dependencyLibrary;
         }
       }
     });
-    _.forEach(versions, version => {
-      let valid = true;
-      _.forEach(ranges, range => {
+    // next scan the max versions to find the minimum
+    let lowestMaxSatisfying = null;
+    _.forOwn(dependencyLibraries, (dependencyLibrary, parent) => {
+      let maxSatisfying = dependencyLibrary.maxSatisfying;
+      if (lowestMaxSatisfying === null) {
+        lowestMaxSatisfying = {
+          parent: parent,
+          version: maxSatisfying
+        };
+      }
+      if (maxSatisfying < lowestMaxSatisfying.version) {
+        lowestMaxSatisfying.parent = parent;
+        lowestMaxSatisfying.version = maxSatisfying;
+      }
+    });
+    // then check if that minimum satisfies the other constraints
+    // if a conflicting constraint is found then we have no version and should
+    // drop and requeue the library version that adds the conflict, with
+    // a new constraint to check for an earlier version of it
+    let constrainingParent = lowestMaxSatisfying.parent;
+    let version = lowestMaxSatisfying.version;
+    let resolutionFound = true;
+    _.forOwn(dependencyLibraries, (dependencyLibrary, parent) => {
+      if (parent !== constrainingParent) {
+        let range = dependencyLibrary.range;
         if (!semver.satisfies(version, range)) {
-          valid = false;
-          return false;
+          // constraint cannot be met so add a new constraint
+          // to the parent providing the lowest version for this
+          // conflicting parent to backtrack to the next lowest version
+          let constrainingState = state[constrainingParent];
+          let constrainedState = state[parent];
+          constrainingState.dependencies[parent] = {
+            range: `< ${constrainedState.version}`,
+            backtrackedDueTo: library
+          };
+          // drop old data for dependency if we have it
+          // already as it should not
+          // be used in calculations anymore
+          this.dropLibrary(parent);
+          // queue dependency for recalculation
+          // as a constraint has been dropped
+          // but it may still be a dependency
+          // of another library still in the tree
+          queuedCalculations.push(parent);
+          resolutionFound = false;
+          return resolutionFound;
         }
-      });
-      if (valid) {
-        validVersion = version;
-        return false;
       }
     });
-    if (validVersion) {
-      return validVersion;
+    if (resolutionFound) {
+      return version;
     }
-    // TODO: figure out where the conflict is and see if an earlier version will
-    // satisfy the constraints
-    throw new Error(
-      `Unable to satisfy version constraints: ${library}@${ranges}`
-    );
+    return null;
   }
 
   cacheVersions() {
@@ -153,14 +213,22 @@ class RecursiveSemver {
 
   resolveVersions() {
     let queuedCalculations = this.queuedCalculations;
-    this.queuedCalculations = [];
+    let nextQueuedCalculations = this.queuedCalculations = [];
     let state = this.state;
     let queuedConstraintUpdates = this.queuedConstraintUpdates;
     queuedCalculations.forEach(library => {
-      let version = this.maxSatisfying(library);
-      state[library] = state[library] || {};
-      state[library].version = version;
-      queuedConstraintUpdates.push(library);
+      // don't check if the library was already requeued
+      // due to backtracking - it may have been orphaned
+      // and anyway tracking the state gets complicated
+      if (!_.includes(nextQueuedCalculations, library)) {
+        let version = this.maxSatisfying(library);
+        if (version) {
+          state[library] = {
+            version: version
+          };
+          queuedConstraintUpdates.push(library);
+        }
+      }
     });
   }
 
@@ -190,7 +258,15 @@ class RecursiveSemver {
       dependenciesArray.forEach((dependencies, index) => {
         let library = dependenciesToCache[index];
         cachedDependencies[library] = cachedDependencies[library] || {};
-        cachedDependencies[library][state[library].version] = dependencies;
+        console.log(dependencies);
+        cachedDependencies[library][state[library].version] =
+          _.mapValues(dependencies, range => {
+            return {
+              range: range
+            };
+          });
+
+        console.log(cachedDependencies[library][state[library].version]);
       });
     });
   }
