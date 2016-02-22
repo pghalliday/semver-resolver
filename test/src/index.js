@@ -1,5 +1,7 @@
 'use strict';
 
+let fs = require('fs');
+let path = require('path');
 let chai = require('chai');
 let chaiAsPromised = require('chai-as-promised');
 chai.use(chaiAsPromised);
@@ -7,158 +9,75 @@ chai.should();
 
 let RecursiveSemver = require('../../src');
 
-let repository = {
-  test1: {
-    '0.1.1': {
-    },
-    '0.1.2': {
-    },
-    '0.1.3': {
-    },
-    '0.1.4': {
-    },
-    '0.1.5': {
-    }
-  },
-  test2: {
-    '0.1.1': {
-      test1: '^0.1.1'
-    },
-    '0.1.2': {
-      test1: '^0.1.2'
-    },
-    '0.1.3': {
-      test1: '^0.1.3'
-    },
-    '0.1.4': {
-      test1: '^0.1.4'
-    },
-    '0.1.5': {
-      test1: '^0.1.5'
-    }
-  },
-  test3: {
-    '0.1.1': {
-      test1: '0.1.1',
-      test2: '0.1.1'
-    },
-    '0.1.2': {
-      test1: '0.1.2',
-      test2: '0.1.2'
-    },
-    '0.1.3': {
-      test1: '0.1.3',
-      test2: '0.1.3'
-    },
-    '0.1.4': {
-      test1: '0.1.4',
-      test2: '0.1.4'
-    },
-    '0.1.5': {
-      test1: '0.1.5',
-      test2: '0.1.5'
-    }
-  },
-  test4: {
-    '0.1.1': {
-      test1: '0.1.1'
-    },
-    '0.1.2': {
-      test1: '0.1.2'
-    },
-    '0.1.3': {
-      test1: '0.1.3'
-    },
-    '0.1.4': {
-      test1: '0.1.4'
-    },
-    '0.1.5': {
-      test1: '0.1.5'
-    }
-  },
-  test5: {
-    '0.1.1': {
-      test4: '0.1.1'
-    },
-    '0.1.2': {
-      test4: '0.1.2'
-    },
-    '0.1.3': {
-      test4: '0.1.3'
-    },
-    '0.1.4': {
-      test3: '0.1.4',
-      test4: '0.1.4'
-    },
-    '0.1.5': {
-      test3: '0.1.5',
-      test4: '0.1.5'
-    }
-  },
-  test6: {
-    '0.1.1': {
-      test5: '0.1.1'
-    },
-    '0.1.2': {
-      test5: '0.1.2'
-    },
-    '0.1.3': {
-      test5: '0.1.3'
-    },
-    '0.1.4': {
-      test5: '0.1.4'
-    },
-    '0.1.5': {
-      test5: '0.1.5'
-    }
+class Repository {
+  constructor(repository) {
+    this.repository = JSON.parse(
+      fs.readFileSync(
+        path.join(
+          __dirname,
+          '..',
+          'repositories',
+          `${repository}.json`
+        )
+      )
+    );
   }
-};
 
-let getVersions = library => {
-  return Promise.resolve().then(() => {
-    if (!repository[library]) {
-      throw new Error(`No such library: ${library}`);
-    }
-    return Object.keys(repository[library]);
-  });
-};
+  getVersions(library) {
+    return Promise.resolve().then(() => {
+      let versions = this.repository[library];
+      if (!versions) {
+        throw new Error(`No such library: ${library}`);
+      }
+      return Object.keys(versions);
+    });
+  }
 
-let getDependencies = (library, version) => {
-  return Promise.resolve().then(() => {
-    return repository[library][version];
-  });
-};
+  getDependencies(library, version) {
+    return Promise.resolve().then(() => {
+      return this.repository[library][version];
+    });
+  }
+}
 
 describe('RecursiveSemver.prototype.resolve', () => {
   describe('with 1 level of constraints that can be resolved', () => {
+    beforeEach(() => {
+      this.repository = new Repository('one-level-of-constraints');
+    });
+
     it('should successfully resolve the version constraints', () => {
       return new RecursiveSemver(
         'test0',
         '0.0.0',
         {
-          test1: '^0.1.1',
-          test2: '0.1.2'
+          test1: '^0.1.0',
+          test2: '0.1.0'
         },
-        getVersions,
-        getDependencies
+        this.repository.getVersions.bind(this.repository),
+        this.repository.getDependencies.bind(this.repository)
       ).resolve().should.eventually.eql({
-        test1: '0.1.5',
-        test2: '0.1.2'
+        test1: '0.1.1',
+        test2: '0.1.0'
       });
     });
   });
 
   describe('with constraints that cannot be resolved', () => {
+    beforeEach(() => {
+      this.repository = new Repository('one-level-of-constraints');
+    });
+
     it('should fail with an error', () => {
       return new RecursiveSemver(
         'test0',
         '0.0.0',
         {
-          test1: '^0.1.1',
+          test1: '^0.1.0',
           test2: '^0.2.0'
         },
-        getVersions,
-        getDependencies
+        this.repository.getVersions.bind(this.repository),
+        this.repository.getDependencies.bind(this.repository)
       ).resolve().should.be.rejectedWith(
         'Unable to satisfy version constraint: test2@^0.2.0 from test0@0.0.0'
       );
@@ -166,16 +85,20 @@ describe('RecursiveSemver.prototype.resolve', () => {
   });
 
   describe('with an unknown library', () => {
+    beforeEach(() => {
+      this.repository = new Repository('one-level-of-constraints');
+    });
+
     it('should fail with an error', () => {
       return new RecursiveSemver(
         'test0',
         '0.0.0',
         {
-          test1: '^0.1.1',
-          test9: '^0.1.1'
+          test1: '^0.1.0',
+          test9: '^0.1.0'
         },
-        getVersions,
-        getDependencies
+        this.repository.getVersions.bind(this.repository),
+        this.repository.getDependencies.bind(this.repository)
       ).resolve().should.be.rejectedWith(
         'No such library: test9'
       );
@@ -183,82 +106,98 @@ describe('RecursiveSemver.prototype.resolve', () => {
   });
 
   describe('with easily resolvable sub constraints', () => {
+    beforeEach(() => {
+      this.repository = new Repository('two-levels-of-constraints');
+    });
+
     it('should successfully resolve the version constraints', () => {
       return new RecursiveSemver(
         'test0',
         '0.0.0',
         {
-          test2: '^0.1.1'
+          test2: '^0.1.0'
         },
-        getVersions,
-        getDependencies
+        this.repository.getVersions.bind(this.repository),
+        this.repository.getDependencies.bind(this.repository)
       ).resolve().should.eventually.eql({
-        test1: '0.1.5',
-        test2: '0.1.5'
+        test1: '0.1.1',
+        test2: '0.1.1'
       });
     });
   });
 
   describe('with overlapping constraints', () => {
+    beforeEach(() => {
+      this.repository = new Repository('overlapping-constraints');
+    });
+
     it('should successfully resolve the version constraints', () => {
       return new RecursiveSemver(
         'test0',
         '0.0.0',
         {
-          test3: '0.1.3'
+          test3: '0.1.1'
         },
-        getVersions,
-        getDependencies
+        this.repository.getVersions.bind(this.repository),
+        this.repository.getDependencies.bind(this.repository)
       ).resolve().should.eventually.eql({
-        test1: '0.1.3',
-        test2: '0.1.3',
-        test3: '0.1.3'
+        test1: '0.1.1',
+        test2: '0.1.1',
+        test3: '0.1.1'
       });
     });
   });
 
   describe('with sub constraints that result in recalculations', () => {
-    // This should initially select test5@0.1.5, but then correct
-    // it to test5@0.1.3, remove the constraints associated with test5@0.1.5
+    beforeEach(() => {
+      this.repository = new Repository('overriding-constraints');
+    });
+
+    // This should initially select test2@0.1.1, but then correct
+    // it to test2@0.1.0, remove the constraints associated with test2@0.1.1
     // and recalculate
     it('should successfully resolve the version constraints', () => {
       return new RecursiveSemver(
         'test0',
         '0.0.0',
         {
-          test5: '^0.1.3',
-          test6: '0.1.3'
+          test2: '^0.1.0',
+          test4: '0.1.0'
         },
-        getVersions,
-        getDependencies
+        this.repository.getVersions.bind(this.repository),
+        this.repository.getDependencies.bind(this.repository)
       ).resolve().should.eventually.eql({
-        test1: '0.1.3',
-        test4: '0.1.3',
-        test5: '0.1.3',
-        test6: '0.1.3'
+        test1: '0.1.0',
+        test2: '0.1.0',
+        test3: '0.1.0',
+        test4: '0.1.0'
       });
     });
   });
 
   describe('with constraints that require backtracking', () => {
-    // this is difficult as the first pass allows test2@0.1.5
-    // and requires test4@0.1.3. This means the second pass requires test1@^0.1.5
-    // and test1@0.1.3 which conflicts. However the root constraint can be
-    // satisfied if we backtrack to test2@0.1.3 which would then allow test1@^0.1.3
+    beforeEach(() => {
+      this.repository = new Repository('backtracking-constraints');
+    });
+
+    // this is difficult as the first pass allows test2@0.1.1
+    // and requires test3@0.1.0. This means the second pass requires test1@^0.1.1
+    // and test1@0.1.0 which conflicts. However the root constraint can be
+    // satisfied if we backtrack to test2@0.1.0 which would then allow test1@^0.1.0
     it('should successfully resolve the version constraints', () => {
       return new RecursiveSemver(
         'test0',
         '0.0.0',
         {
-          test2: '^0.1.3',
-          test4: '0.1.3'
+          test2: '^0.1.0',
+          test3: '0.1.0'
         },
-        getVersions,
-        getDependencies
+        this.repository.getVersions.bind(this.repository),
+        this.repository.getDependencies.bind(this.repository)
       ).resolve().should.eventually.eql({
-        test1: '0.1.3',
-        test2: '0.1.3',
-        test4: '0.1.3'
+        test1: '0.1.0',
+        test2: '0.1.0',
+        test3: '0.1.0'
       });
     });
   });

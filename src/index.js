@@ -258,15 +258,12 @@ class RecursiveSemver {
       dependenciesArray.forEach((dependencies, index) => {
         let library = dependenciesToCache[index];
         cachedDependencies[library] = cachedDependencies[library] || {};
-        console.log(dependencies);
         cachedDependencies[library][state[library].version] =
           _.mapValues(dependencies, range => {
             return {
               range: range
             };
           });
-
-        console.log(cachedDependencies[library][state[library].version]);
       });
     });
   }
