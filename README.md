@@ -74,8 +74,10 @@ The resolver works in passes. In each pass the following occurs:
   1. Any dependencies of a requeued calculation will also be dropped and requeued
 1. Calculated versions are then added to to a queue to update the state with their dependencies
 1. Dependencies are cached for the calculated versions that have not yet been cached
-1. The new constraints from the dependencies are queued queued for recalculation after dropping the previous calculations and their dependencies
+1. The new constraints from the dependencies are queued for recalculation after dropping the previous calculations and their dependencies
   1. Already queued caclulations are filtered to ensure that any orphaned libraries do not get recalculated - the recursive dropping of libraries can result in already queued calculations no longer being valid/required
+
+Passes continue until there are no longer and calculations queued
 
 ## Contributing
 
