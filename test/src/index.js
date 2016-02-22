@@ -175,6 +175,39 @@ describe('RecursiveSemver.prototype.resolve', () => {
     });
   });
 
+  describe('with recalculations before dependencies are loaded', () => {
+    beforeEach(() => {
+      this.repository = new Repository('fast-overriding-constraints');
+    });
+
+    // This should initially select test2@0.1.1 and test6@0.1.1, but then
+    // correct it to test2@0.1.0 and test6@0.1.0, remove the constraints
+    // associated with test2@0.1.1 and test6@0.1.0 and recalculate, the symmetry
+    // in the test set up should ensure that at least one gets removed before
+    // its dependencies have been loaded
+    it('should successfully resolve the version constraints', () => {
+      return new RecursiveSemver(
+        'test0',
+        '0.0.0',
+        {
+          test2: '^0.1.0',
+          test4: '0.1.0',
+          test6: '^0.1.0'
+        },
+        this.repository.getVersions.bind(this.repository),
+        this.repository.getDependencies.bind(this.repository)
+      ).resolve().should.eventually.eql({
+        test1: '0.1.0',
+        test2: '0.1.0',
+        test3: '0.1.0',
+        test4: '0.1.0',
+        test5: '0.1.0',
+        test6: '0.1.0',
+        test7: '0.1.0'
+      });
+    });
+  });
+
   describe('with constraints that require backtracking', () => {
     beforeEach(() => {
       this.repository = new Repository('backtracking-constraints');

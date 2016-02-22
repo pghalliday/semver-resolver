@@ -217,7 +217,7 @@ class RecursiveSemver {
     let state = this.state;
     let queuedConstraintUpdates = this.queuedConstraintUpdates;
     queuedCalculations.forEach(library => {
-      // don't check if the library was already requeued
+      // don't calculate now if the library was already requeued
       // due to backtracking - it may have been orphaned
       // and anyway tracking the state gets complicated
       if (!_.includes(nextQueuedCalculations, library)) {
