@@ -213,7 +213,7 @@ describe('RecursiveSemver.prototype.resolve', () => {
       this.repository = new Repository('backtracking-constraints');
     });
 
-    // this is difficult as the first pass allows test2@0.1.1
+    // the first pass allows test2@0.1.1
     // and requires test3@0.1.0. This means the second pass requires test1@^0.1.1
     // and test1@0.1.0 which conflicts. However the root constraint can be
     // satisfied if we backtrack to test2@0.1.0 which would then allow test1@^0.1.0
@@ -235,12 +235,42 @@ describe('RecursiveSemver.prototype.resolve', () => {
     });
   });
 
+  describe('when requeuing already queued calculations', () => {
+    beforeEach(() => {
+      this.repository = new Repository('requeuing-queued-calculations');
+    });
+
+    // the first pass allows test2@0.1.1
+    // and requires test3@0.1.0. This means the second pass requires test1@^0.1.1
+    // and test1@0.1.0 which conflicts. However the root constraint can be
+    // satisfied if we backtrack to test2@0.1.0 which would then allow test1@^0.1.0
+    // in the mean time test4 should be requeued before it has been calculated due to
+    // also being a dependency for test2
+    it('should successfully resolve the version constraints', () => {
+      return new RecursiveSemver(
+        'test0',
+        '0.0.0',
+        {
+          test2: '^0.1.0',
+          test3: '0.1.0'
+        },
+        this.repository.getVersions.bind(this.repository),
+        this.repository.getDependencies.bind(this.repository)
+      ).resolve().should.eventually.eql({
+        test1: '0.1.0',
+        test2: '0.1.0',
+        test3: '0.1.0',
+        test4: '0.1.1'
+      });
+    });
+  });
+
   describe('with backtracking but still cannot be resolved', () => {
     beforeEach(() => {
       this.repository = new Repository('backtracking-impossible-constraints');
     });
 
-    // this is difficult as the first pass allows test2@0.1.1
+    // the first pass allows test2@0.1.1
     // and requires test3@0.1.0. This means the second pass requires test1@^0.1.1
     // and test1@0.1.0 which conflicts. However the root constraint might be
     // satisfied if we backtrack to test2@0.1.0 but this also requires test1@^0.1.1
