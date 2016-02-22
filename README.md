@@ -63,6 +63,20 @@ rs.resolve.then(
 );
 ```
 
+## Algorithm
+
+The resolver works in passes. In each pass the following occurs:
+
+1. Unfixed dependencies are queued for calculation
+1. Available versions are cached for dependencies that have not been cached yet
+1. Max satisfying versions are calculated for queued dependencies
+  1. If constraints can't be met due to a version of a dependency fixed in an earlier pass then the version of the conflicting dependency will be backtracked, dropped from the current state of the calculation and requeued for calculation
+  1. Any dependencies of a requeued calculation will also be dropped and requeued
+1. Calculated versions are then added to to a queue to update the state with their dependencies
+1. Dependencies are cached for the calculated versions that have not yet been cached
+1. The new constraints from the dependencies are queued queued for recalculation after dropping the previous calculations and their dependencies
+  1. Already queued caclulations are filtered to ensure that any orphaned libraries do not get recalculated - the recursive dropping of libraries can result in already queued calculations no longer being valid/required
+
 ## Contributing
 
 Install dependencies
