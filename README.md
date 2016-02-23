@@ -5,7 +5,7 @@
 [![Dependency Status](https://david-dm.org/pghalliday/semver-resolver.svg)](https://david-dm.org/pghalliday/semver-resolver)
 [![devDependency Status](https://david-dm.org/pghalliday/semver-resolver/dev-status.svg)](https://david-dm.org/pghalliday/semver-resolver#info=devDependencies)
 
-Calculate an 'optimal' resolution for a dependency tree using semantic versioning
+Calculate an 'optimal' solution for a dependency tree using semantic versioning
 
 - Uses https://www.npmjs.com/package/semver
 - Which implements http://semver.org/
