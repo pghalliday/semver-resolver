@@ -85,7 +85,7 @@ Passes continue until there are no longer any calculations queued
 
 ## Limitations
 
-Although an attempt is made to calculate an `optimal` solution by preferring the maximum satisfying versions according to semantic versioning rules, it is possible that the actual solution could be considered sub-optimal. The following limitations should be considered.
+Although an attempt is made to calculate an 'optimal' solution by preferring the maximum satisfying versions according to semantic versioning rules, it is possible that the actual solution could be considered sub-optimal. The following limitations should be considered.
 
 - When backtracking it is assumed that older versions of a library will have older dependencies
   - this means we choose to backtrack the libraries providing the upper constraints
