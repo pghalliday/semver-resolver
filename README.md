@@ -1,24 +1,27 @@
-# recursive-semver
+# semver-resolver
 
-[![Build Status](https://travis-ci.org/pghalliday/recursive-semver.svg?branch=master)](https://travis-ci.org/pghalliday/recursive-semver)
-[![Coverage Status](https://coveralls.io/repos/github/pghalliday/recursive-semver/badge.svg?branch=master)](https://coveralls.io/github/pghalliday/recursive-semver?branch=master)
-[![Dependency Status](https://david-dm.org/pghalliday/recursive-semver.svg)](https://david-dm.org/pghalliday/recursive-semver)
-[![devDependency Status](https://david-dm.org/pghalliday/recursive-semver/dev-status.svg)](https://david-dm.org/pghalliday/recursive-semver#info=devDependencies)
+[![Build Status](https://travis-ci.org/pghalliday/semver-resolver.svg?branch=master)](https://travis-ci.org/pghalliday/semver-resolver)
+[![Coverage Status](https://coveralls.io/repos/github/pghalliday/semver-resolver/badge.svg?branch=master)](https://coveralls.io/github/pghalliday/semver-resolver?branch=master)
+[![Dependency Status](https://david-dm.org/pghalliday/semver-resolver.svg)](https://david-dm.org/pghalliday/semver-resolver)
+[![devDependency Status](https://david-dm.org/pghalliday/semver-resolver/dev-status.svg)](https://david-dm.org/pghalliday/semver-resolver#info=devDependencies)
 
-Calculate versions for a dependency tree of libraries that use semver but do not allow more than one version of a library to be present in the calculation
+Calculate an 'optimal' resolution for a dependency tree using semantic versioning
+
+- https://www.npmjs.com/package/semver
+- http://semver.org/
 
 ## Usage
 
-Require the `RecursiveSemver` class
+Require the `SemverResolver` class
 
 ```javascript
-let RecursiveSemver = require('recursive-semver');
+let SemverResolver = require('semver-resolver');
 ```
 
-Construct a new `RecursiveSemver` instance, supplying functions that return promises for available versions of libraries and the version constraints associated with particular versions of libraries along with a top level list of libraries and their version constraints (the dependencies).
+Construct a new `SemverResolver` instance, supplying functions that return promises for available versions of libraries and the version constraints associated with particular versions of libraries along with a top level list of libraries and their version constraints (the dependencies).
 
 ```javascript
-let rs = new RecursiveSemver(
+let resolver = new SemverResolver(
   {
     'foo': '^2.4.5',
     'bar': '^1.17.3',
@@ -44,7 +47,7 @@ let rs = new RecursiveSemver(
 `#resolve` returns a promise for the resolved list of dependencies and their versions, or an error if the constraints cannot be resolved.
 
 ```javascript
-rs.resolve.then(
+resolver.resolve.then(
   resolution => {
 
     // `resolution` will be a mapping of all the required
@@ -79,6 +82,21 @@ The resolver works in passes. In each pass the following occurs:
 1. The next pass starts again at step 2
 
 Passes continue until there are no longer any calculations queued
+
+## Limitations
+
+Although an attempt is made to calculate an `optimal` solution by preferring the maximum satisfying versions according to semantic versioning rules, it is possible that the actual solution could be considered sub-optimal. The following limitations should be considered.
+
+- When backtracking it is assumed that older versions of a library will have older dependencies
+  - this means we choose to backtrack the libraries providing the upper constraints
+  - if a library has reverted a version of a dependency due to some issue then it may be possible that a newer matching solution could be found by backtracking the library with the lower constraint
+  - in such a case, however, it may well be undesirable to backtrack and the algorithm should avoid this
+- The definition of optimal may not be clear, particularly if multiple solutions are available
+  - The algiorithm does not consider possible alternative solutions and only returns the first it finds
+  - the choice of libraries to backtrack is somewhat arbitrary, in that on each pass the first upper constraint found will be backtracked until a solution can be found
+  - It may be preferable to backtrack differently (ie. choosing different libraries to backtrack or backtracking in a different order)
+
+If a better solution is known it should be reflected by the user through pinned versions in the root dependencies
 
 ## Contributing
 

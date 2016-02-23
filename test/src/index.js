@@ -7,7 +7,7 @@ let chaiAsPromised = require('chai-as-promised');
 chai.use(chaiAsPromised);
 chai.should();
 
-let RecursiveSemver = require('../../src');
+let SemverResolver = require('../../src');
 
 class Repository {
   constructor(repository) {
@@ -40,14 +40,14 @@ class Repository {
   }
 }
 
-describe('RecursiveSemver.prototype.resolve', () => {
+describe('SemverResolver.prototype.resolve', () => {
   describe('with 1 level of constraints that can be resolved', () => {
     beforeEach(() => {
       this.repository = new Repository('one-level-of-constraints');
     });
 
     it('should successfully resolve the version constraints', () => {
-      return new RecursiveSemver(
+      return new SemverResolver(
         'test0',
         '0.0.0',
         {
@@ -69,7 +69,7 @@ describe('RecursiveSemver.prototype.resolve', () => {
     });
 
     it('should fail with an error', () => {
-      return new RecursiveSemver(
+      return new SemverResolver(
         'test0',
         '0.0.0',
         {
@@ -90,7 +90,7 @@ describe('RecursiveSemver.prototype.resolve', () => {
     });
 
     it('should fail with an error', () => {
-      return new RecursiveSemver(
+      return new SemverResolver(
         'test0',
         '0.0.0',
         {
@@ -111,7 +111,7 @@ describe('RecursiveSemver.prototype.resolve', () => {
     });
 
     it('should successfully resolve the version constraints', () => {
-      return new RecursiveSemver(
+      return new SemverResolver(
         'test0',
         '0.0.0',
         {
@@ -132,7 +132,7 @@ describe('RecursiveSemver.prototype.resolve', () => {
     });
 
     it('should successfully resolve the version constraints', () => {
-      return new RecursiveSemver(
+      return new SemverResolver(
         'test0',
         '0.0.0',
         {
@@ -157,7 +157,7 @@ describe('RecursiveSemver.prototype.resolve', () => {
     // it to test2@0.1.0, remove the constraints associated with test2@0.1.1
     // and recalculate
     it('should successfully resolve the version constraints', () => {
-      return new RecursiveSemver(
+      return new SemverResolver(
         'test0',
         '0.0.0',
         {
@@ -186,7 +186,7 @@ describe('RecursiveSemver.prototype.resolve', () => {
     // in the test set up should ensure that at least one gets removed before
     // its dependencies have been loaded
     it('should successfully resolve the version constraints', () => {
-      return new RecursiveSemver(
+      return new SemverResolver(
         'test0',
         '0.0.0',
         {
@@ -218,7 +218,7 @@ describe('RecursiveSemver.prototype.resolve', () => {
     // and test1@0.1.0 which conflicts. However the root constraint can be
     // satisfied if we backtrack to test2@0.1.0 which would then allow test1@^0.1.0
     it('should successfully resolve the version constraints', () => {
-      return new RecursiveSemver(
+      return new SemverResolver(
         'test0',
         '0.0.0',
         {
@@ -247,7 +247,7 @@ describe('RecursiveSemver.prototype.resolve', () => {
     // in the mean time test4 should be requeued before it has been calculated due to
     // also being a dependency for test2
     it('should successfully resolve the version constraints', () => {
-      return new RecursiveSemver(
+      return new SemverResolver(
         'test0',
         '0.0.0',
         {
@@ -276,7 +276,7 @@ describe('RecursiveSemver.prototype.resolve', () => {
     // satisfied if we backtrack to test2@0.1.0 but this also requires test1@^0.1.1
     // so the constraints cannot be resolved
     it('should be rejected', () => {
-      return new RecursiveSemver(
+      return new SemverResolver(
         'test0',
         '0.0.0',
         {

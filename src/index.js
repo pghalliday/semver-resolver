@@ -3,7 +3,7 @@
 let semver = require('semver');
 let _ = require('lodash');
 
-class RecursiveSemver {
+class SemverResolver {
   constructor(name, version, dependencies, getVersions, getDependencies) {
     this.getVersions = getVersions;
     this.getDependencies = getDependencies;
@@ -304,4 +304,4 @@ class RecursiveSemver {
   }
 }
 
-module.exports = RecursiveSemver;
+module.exports = SemverResolver;

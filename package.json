@@ -1,7 +1,7 @@
 {
-  "name": "recursive-semver",
+  "name": "semver-resolver",
   "version": "1.0.0",
-  "description": "Calculate versions for a dependency tree of libraries that use semver but do not allow more than one version of a library to be present in the calculation",
+  "description": "Calculate an 'optimal' resolution for a dependency tree using semantic versioning",
   "main": "src/index.js",
   "scripts": {
     "mocha": "mocha --recursive --reporter spec",
@@ -16,7 +16,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/pghalliday/recursive-semver.git"
+    "url": "git+https://github.com/pghalliday/semver-resolver.git"
   },
   "keywords": [
     "semver",
@@ -25,9 +25,9 @@
   "author": "Peter Halliday <pghalliday@gmail.com> (http://pghalliday.com)",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/pghalliday/recursive-semver/issues"
+    "url": "https://github.com/pghalliday/semver-resolver/issues"
   },
-  "homepage": "https://github.com/pghalliday/recursive-semver#readme",
+  "homepage": "https://github.com/pghalliday/semver-resolver#readme",
   "dependencies": {
     "lodash": "^4.5.0",
     "semver": "^5.1.0"
