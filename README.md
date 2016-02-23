@@ -7,8 +7,8 @@
 
 Calculate an 'optimal' resolution for a dependency tree using semantic versioning
 
-- https://www.npmjs.com/package/semver
-- http://semver.org/
+- Uses https://www.npmjs.com/package/semver
+- Which implements http://semver.org/
 
 ## Usage
 
