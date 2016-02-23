@@ -23,7 +23,7 @@ Construct a new `SemverResolver` instance, supplying functions that return promi
 ```javascript
 let resolver = new SemverResolver(
   'thislib', // the name of the root library
-  '0.1.0', // the version of the rrot library
+  '0.1.0', // the version of the root library
   { // The dependency constraints for the root library
     'foo': '^2.4.5',
     'bar': '^1.17.3',
