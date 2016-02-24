@@ -292,4 +292,29 @@ describe('SemverResolver.prototype.resolve', () => {
       );
     });
   });
+
+  describe('when the root would need to be backtracked', () => {
+    beforeEach(() => {
+      this.repository = new Repository('root-requires-backtracking');
+    });
+
+    // TODO: the first pass requires test2@0.1.1
+    // and requires test3@0.1.0. This means the second pass requires test1@^0.1.1
+    // and test1@0.1.0 which conflicts. However the constraints might be
+    // satisfied if we backtrack to test0@<0.0.0 but we can't backtrack the root
+    it.skip('should be rejected', () => {
+      return new SemverResolver(
+        'test0',
+        '0.0.0',
+        {
+          test2: '0.1.1',
+          test3: '0.1.0'
+        },
+        this.repository.getVersions.bind(this.repository),
+        this.repository.getDependencies.bind(this.repository)
+      ).resolve().should.be.rejectedWith(
+        'some error'
+      );
+    });
+  });
 });

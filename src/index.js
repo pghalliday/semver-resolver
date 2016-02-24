@@ -43,6 +43,17 @@ class SemverResolver {
     );
   }
 
+  cleanQueuedConstraintUpdates() {
+    let state = this.state;
+    let knownLibraries = Object.keys(state);
+    // we only want to look up dependencies for
+    // libraries still in the state
+    this.queuedConstraintUpdates = _.intersection(
+      this.queuedConstraintUpdates,
+      knownLibraries
+    );
+  }
+
   dropLibrary(library) {
     let queuedCalculations = this.queuedCalculations;
     let state = this.state;
@@ -166,6 +177,9 @@ class SemverResolver {
       if (parent !== constrainingParent) {
         let range = dependencyLibrary.range;
         if (!semver.satisfies(version, range)) {
+          // TODO: check if parent is root as parent
+          // cannot be backtracked
+
           // constraint cannot be met so add a new constraint
           // to the parent providing the lowest version for this
           // conflicting parent to backtrack to the next lowest version
@@ -230,6 +244,10 @@ class SemverResolver {
         }
       }
     });
+    // clean up the queued constraint updates
+    // as some of the libraries may no longer
+    // even be in dependencies
+    this.cleanQueuedConstraintUpdates();
   }
 
   cacheDependencies() {
