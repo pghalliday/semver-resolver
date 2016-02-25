@@ -37,14 +37,32 @@ let resolver = new SemverResolver(
   getVersions: library => {
 
     // return a promise for the available versions of the requested library
-    ...
+    // eg.
+
+    return new Promise(resolve => {
+      return [
+        '1.0.0',
+        '1.0.1',
+        '1.0.2',
+        '1.1.0',
+        '1.1.1'
+      ];
+    });
+
 
   },
   getDependencies: (library, version) => {
 
     // return a promise for the additional version constraints
     // to be applied for the requested version of the requested library
-    ...
+    // eg.
+
+    return new Promise(resolve => {
+      return {
+        'alib': '^5.2.1',
+        'blib': '^3.0.0'
+      };
+    });
 
   },
   // Optionally supply a `locks` structure returned from a previous call
