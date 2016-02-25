@@ -48,8 +48,6 @@ describe('SemverResolver.prototype.resolve', () => {
 
     it('should successfully resolve the version constraints', () => {
       return new SemverResolver(
-        'test0',
-        '0.0.0',
         {
           test1: '^0.1.0',
           test2: '0.1.0'
@@ -70,8 +68,6 @@ describe('SemverResolver.prototype.resolve', () => {
 
     it('should fail with an error', () => {
       return new SemverResolver(
-        'test0',
-        '0.0.0',
         {
           test1: '^0.1.0',
           test2: '^0.2.0'
@@ -79,7 +75,7 @@ describe('SemverResolver.prototype.resolve', () => {
         this.repository.getVersions.bind(this.repository),
         this.repository.getDependencies.bind(this.repository)
       ).resolve().should.be.rejectedWith(
-        'Unable to satisfy version constraint: test2@^0.2.0 from test0@0.0.0'
+        'Unable to satisfy version constraint: test2@^0.2.0 from root'
       );
     });
   });
@@ -91,8 +87,6 @@ describe('SemverResolver.prototype.resolve', () => {
 
     it('should fail with an error', () => {
       return new SemverResolver(
-        'test0',
-        '0.0.0',
         {
           test1: '^0.1.0',
           test9: '^0.1.0'
@@ -112,8 +106,6 @@ describe('SemverResolver.prototype.resolve', () => {
 
     it('should successfully resolve the version constraints', () => {
       return new SemverResolver(
-        'test0',
-        '0.0.0',
         {
           test2: '^0.1.0'
         },
@@ -133,8 +125,6 @@ describe('SemverResolver.prototype.resolve', () => {
 
     it('should successfully resolve the version constraints', () => {
       return new SemverResolver(
-        'test0',
-        '0.0.0',
         {
           test3: '0.1.1'
         },
@@ -158,8 +148,6 @@ describe('SemverResolver.prototype.resolve', () => {
     // and recalculate
     it('should successfully resolve the version constraints', () => {
       return new SemverResolver(
-        'test0',
-        '0.0.0',
         {
           test2: '^0.1.0',
           test4: '0.1.0'
@@ -187,8 +175,6 @@ describe('SemverResolver.prototype.resolve', () => {
     // its dependencies have been loaded
     it('should successfully resolve the version constraints', () => {
       return new SemverResolver(
-        'test0',
-        '0.0.0',
         {
           test2: '^0.1.0',
           test4: '0.1.0',
@@ -219,8 +205,6 @@ describe('SemverResolver.prototype.resolve', () => {
     // satisfied if we backtrack to test2@0.1.0 which would then allow test1@^0.1.0
     it('should successfully resolve the version constraints', () => {
       return new SemverResolver(
-        'test0',
-        '0.0.0',
         {
           test2: '^0.1.0',
           test3: '0.1.0'
@@ -248,8 +232,6 @@ describe('SemverResolver.prototype.resolve', () => {
     // also being a dependency for test2
     it('should successfully resolve the version constraints', () => {
       return new SemverResolver(
-        'test0',
-        '0.0.0',
         {
           test2: '^0.1.0',
           test3: '0.1.0'
@@ -277,8 +259,6 @@ describe('SemverResolver.prototype.resolve', () => {
     // so the constraints cannot be resolved
     it('should be rejected', () => {
       return new SemverResolver(
-        'test0',
-        '0.0.0',
         {
           test2: '^0.1.0',
           test3: '0.1.0'
@@ -298,14 +278,12 @@ describe('SemverResolver.prototype.resolve', () => {
       this.repository = new Repository('root-requires-backtracking');
     });
 
-    // TODO: the first pass requires test2@0.1.1
+    // the first pass requires test2@0.1.1
     // and requires test3@0.1.0. This means the second pass requires test1@^0.1.1
     // and test1@0.1.0 which conflicts. However the constraints might be
     // satisfied if we backtrack to test0@<0.0.0 but we can't backtrack the root
-    it.skip('should be rejected', () => {
+    it('should be rejected', () => {
       return new SemverResolver(
-        'test0',
-        '0.0.0',
         {
           test2: '0.1.1',
           test3: '0.1.0'
@@ -313,7 +291,8 @@ describe('SemverResolver.prototype.resolve', () => {
         this.repository.getVersions.bind(this.repository),
         this.repository.getDependencies.bind(this.repository)
       ).resolve().should.be.rejectedWith(
-        'some error'
+        'Unable to satisfy version constraint: test2@0.1.1 ' +
+        'from root due to shared constraint from test3@0.1.0'
       );
     });
   });

@@ -2,15 +2,16 @@
 
 let semver = require('semver');
 let _ = require('lodash');
+let uuid = require('uuid');
 
 class SemverResolver {
-  constructor(name, version, dependencies, getVersions, getDependencies) {
+  constructor(dependencies, getVersions, getDependencies) {
     this.getVersions = getVersions;
     this.getDependencies = getDependencies;
-    this.root = name;
+    let rootName = uuid.v4();
+    this.root = rootName;
     let state = this.state = {};
-    let rootState = state[name] = {};
-    rootState.version = version;
+    let rootState = state[rootName] = {};
     rootState.dependencies = _.mapValues(dependencies, range => {
       return {
         range: range
@@ -130,18 +131,23 @@ class SemverResolver {
             let maxSatisfying = semver.maxSatisfying(versions, range);
             if (maxSatisfying === null) {
               let backtrackedDueTo = dependencyLibrary.backtrackedDueTo;
+              let constrainingLibrary = 'root';
+              let version = libraryState.version;
+              if (version) {
+                constrainingLibrary = `${parent}@${version}`;
+              }
               if (backtrackedDueTo) {
                 throw new Error(
                   `Unable to satisfy backtracked version constraint: ` +
                   `${library}@${range} from ` +
-                  `${parent}@${libraryState.version} due to shared ` +
+                  `${constrainingLibrary} due to shared ` +
                   `constraint on ${backtrackedDueTo}`
                 );
               } else {
                 throw new Error(
                   `Unable to satisfy version constraint: ` +
                   `${library}@${range} from ` +
-                  `${parent}@${libraryState.version}`
+                  `${constrainingLibrary}`
                 );
               }
             }
@@ -177,16 +183,25 @@ class SemverResolver {
       if (parent !== constrainingParent) {
         let range = dependencyLibrary.range;
         if (!semver.satisfies(version, range)) {
-          // TODO: check if parent is root as parent
+          // check if parent is root as root
           // cannot be backtracked
+          let constrainingState = state[constrainingParent];
+          let constrainedState = state[parent];
+          let constrainedStateVersion = constrainedState.version;
+          if (!constrainedStateVersion) {
+            throw new Error(
+              `Unable to satisfy version constraint: ` +
+              `${library}@${range} from root due to ` +
+              'shared constraint from ' +
+              `${constrainingParent}@${constrainingState.version}`
+            );
+          }
 
           // constraint cannot be met so add a new constraint
           // to the parent providing the lowest version for this
           // conflicting parent to backtrack to the next lowest version
-          let constrainingState = state[constrainingParent];
-          let constrainedState = state[parent];
           constrainingState.dependencies[parent] = {
-            range: `<${constrainedState.version}`,
+            range: `<${constrainedStateVersion}`,
             backtrackedDueTo: library
           };
           // drop old data for dependency if we have it

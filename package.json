@@ -30,7 +30,8 @@
   "homepage": "https://github.com/pghalliday/semver-resolver#readme",
   "dependencies": {
     "lodash": "^4.5.0",
-    "semver": "^5.1.0"
+    "semver": "^5.1.0",
+    "uuid": "^2.0.1"
   },
   "devDependencies": {
     "chai": "^3.5.0",
