@@ -40,13 +40,13 @@ let resolver = new SemverResolver(
     // eg.
 
     return new Promise(resolve => {
-      return [
+      resolve([
         '1.0.0',
         '1.0.1',
         '1.0.2',
         '1.1.0',
         '1.1.1'
-      ];
+      ]);
     });
 
 
@@ -58,10 +58,10 @@ let resolver = new SemverResolver(
     // eg.
 
     return new Promise(resolve => {
-      return {
+      resolve({
         'alib': '^5.2.1',
         'blib': '^3.0.0'
-      };
+      });
     });
 
   },
