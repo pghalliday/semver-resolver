@@ -28,24 +28,69 @@ Construct a new `SemverResolver` instance, supplying functions that return promi
 
 ```javascript
 let resolver = new SemverResolver(
-  {
+  dependencies: {
     'foo': '^2.4.5',
     'bar': '^1.17.3',
     'mylib': '^2.8.0',
     'another-lib': '^0.17.1'
   },
-  library => {
+  getVersions: library => {
 
     // return a promise for the available versions of the requested library
     ...
 
   },
-  (library, version) => {
+  getDependencies: (library, version) => {
 
     // return a promise for the additional version constraints
     // to be applied for the requested version of the requested library
     ...
 
+  },
+  // Optionally supply a `locks` structure returned from a previous call
+  // to `#resolve`
+  locks: {
+    // version of semver-resolver used to generate the locks
+    version: '1.0.0',
+    // original dependencies used to generate the locks (will be
+    // compared to new dependencies to see if they changed)
+    dependencies: {
+      'foo': '^2.4.5',
+      'bar': '^1.17.3',
+      'mylib': '^2.8.0'
+    },
+    // The resolution to lock where appropriate. New dependencies will
+    // have to satisfy these versions to minimise change. However,
+    // dropped dependencies and their requirements will not be counted.
+    // If the dependencies have not changed then the generated resolution
+    // will be the same
+    resolution: {
+      'foo': {
+        version: '2.4.8',
+        dependencies: {
+          'bar': '^1.17.0'
+        }
+      },
+      'bar': {
+        version: '1.17.5',
+        dependencies: {
+          'alib': '^5.2.1',
+          'blib': '^3.0.0'
+        }
+      },
+      'mylib': {
+        version: '2.8.6',
+        dependencies: {}
+      },
+      'alib': {
+        version: '5.2.4',
+        dependencies: {}
+      },
+      'blib': {
+        version: '3.0.0',
+        dependencies: {}
+      }
+    }
   }
 });
 ```
@@ -54,11 +99,11 @@ let resolver = new SemverResolver(
 
 ```javascript
 resolver.resolve.then(
-  resolution => {
+  locks => {
 
-    // `resolution` will be a mapping of all the required
-    // libraries to the highest versions that satisfy the
-    // recursive version constraints
+    // `locks` will be a structure including the resolution
+    // that can also be used in calls to `#resolve` to lock
+    // versions of dependencies
     ...
 
   },
