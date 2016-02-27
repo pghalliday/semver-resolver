@@ -48,11 +48,14 @@
   },
   "homepage": "https://github.com/pghalliday/semver-resolver#readme",
   "dependencies": {
+    "babel-polyfill": "^6.5.0",
+    "babel-runtime": "^6.5.0",
     "lodash": "^4.5.0",
     "semver": "^5.1.0",
     "uuid": "^2.0.1"
   },
   "devDependencies": {
+    "babel-plugin-transform-runtime": "^6.5.2",
     "babel-cli": "^6.5.1",
     "babel-preset-es2015": "^6.5.0",
     "babel-register": "^6.5.2",

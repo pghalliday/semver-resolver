@@ -1,13 +1,14 @@
 'use strict';
 
-let fs = require('fs');
-let path = require('path');
-let chai = require('chai');
-let chaiAsPromised = require('chai-as-promised');
+import 'babel-polyfill';
+import fs from 'fs';
+import path from 'path';
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
 chai.use(chaiAsPromised);
 chai.should();
 
-let SemverResolver = require('../../src');
+import SemverResolver from '../../src';
 
 class Repository {
   constructor(repository) {

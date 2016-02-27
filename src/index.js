@@ -1,8 +1,9 @@
 'use strict';
 
-let semver = require('semver');
-let _ = require('lodash');
-let uuid = require('uuid');
+import 'babel-polyfill';
+import semver from 'semver';
+import _ from 'lodash';
+import uuid from 'uuid';
 
 class SemverResolver {
   constructor(dependencies, getVersions, getDependencies) {
@@ -337,4 +338,4 @@ class SemverResolver {
   }
 }
 
-module.exports = SemverResolver;
+export default SemverResolver;
