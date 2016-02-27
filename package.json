@@ -1,6 +1,6 @@
 {
   "name": "semver-resolver",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Calculate an 'optimal' solution for a dependency tree using semantic versioning",
   "main": "lib/index.js",
   "config": {
