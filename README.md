@@ -117,3 +117,15 @@ Watch for changes and run lint/tests with
 ```
 npm run watch
 ```
+
+Use the `push` script to push to git to ensure that the lib folder has been built and committed.
+
+```
+npm run push
+```
+
+Use the `release` script to make releases to ensure that the correct tag is created
+
+```
+npm run release
+```
