@@ -5,7 +5,7 @@ import semver from 'semver';
 import _ from 'lodash';
 import uuid from 'uuid';
 
-class SemverResolver {
+export class SemverResolver {
   constructor(dependencies, getVersions, getDependencies) {
     this.getVersions = getVersions;
     this.getDependencies = getDependencies;
