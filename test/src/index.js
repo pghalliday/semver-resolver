@@ -50,14 +50,14 @@ describe('SemverResolver.prototype.resolve', () => {
     });
 
     it('should successfully resolve the version constraints', () => {
-      return new SemverResolver(
-        {
+      return new SemverResolver({
+        dependencies: {
           test1: '^0.1.0',
           test2: '0.1.0'
         },
-        repository.getVersions.bind(repository),
-        repository.getDependencies.bind(repository)
-      ).resolve().should.eventually.eql({
+        getVersions: repository.getVersions.bind(repository),
+        getDependencies: repository.getDependencies.bind(repository)
+      }).resolve().should.eventually.eql({
         test1: '0.1.1',
         test2: '0.1.0'
       });
@@ -70,14 +70,14 @@ describe('SemverResolver.prototype.resolve', () => {
     });
 
     it('should fail with an error', () => {
-      return new SemverResolver(
-        {
+      return new SemverResolver({
+        dependencies: {
           test1: '^0.1.0',
           test2: '^0.2.0'
         },
-        repository.getVersions.bind(repository),
-        repository.getDependencies.bind(repository)
-      ).resolve().should.be.rejectedWith(
+        getVersions: repository.getVersions.bind(repository),
+        getDependencies: repository.getDependencies.bind(repository)
+      }).resolve().should.be.rejectedWith(
         'Unable to satisfy version constraint: test2@^0.2.0 from root'
       );
     });
@@ -89,14 +89,14 @@ describe('SemverResolver.prototype.resolve', () => {
     });
 
     it('should fail with an error', () => {
-      return new SemverResolver(
-        {
+      return new SemverResolver({
+        dependencies: {
           test1: '^0.1.0',
           test9: '^0.1.0'
         },
-        repository.getVersions.bind(repository),
-        repository.getDependencies.bind(repository)
-      ).resolve().should.be.rejectedWith(
+        getVersions: repository.getVersions.bind(repository),
+        getDependencies: repository.getDependencies.bind(repository)
+      }).resolve().should.be.rejectedWith(
         'No such library: test9'
       );
     });
@@ -108,13 +108,13 @@ describe('SemverResolver.prototype.resolve', () => {
     });
 
     it('should successfully resolve the version constraints', () => {
-      return new SemverResolver(
-        {
+      return new SemverResolver({
+        dependencies: {
           test2: '^0.1.0'
         },
-        repository.getVersions.bind(repository),
-        repository.getDependencies.bind(repository)
-      ).resolve().should.eventually.eql({
+        getVersions: repository.getVersions.bind(repository),
+        getDependencies: repository.getDependencies.bind(repository)
+      }).resolve().should.eventually.eql({
         test1: '0.1.1',
         test2: '0.1.1'
       });
@@ -127,13 +127,13 @@ describe('SemverResolver.prototype.resolve', () => {
     });
 
     it('should successfully resolve the version constraints', () => {
-      return new SemverResolver(
-        {
+      return new SemverResolver({
+        dependencies: {
           test3: '0.1.1'
         },
-        repository.getVersions.bind(repository),
-        repository.getDependencies.bind(repository)
-      ).resolve().should.eventually.eql({
+        getVersions: repository.getVersions.bind(repository),
+        getDependencies: repository.getDependencies.bind(repository)
+      }).resolve().should.eventually.eql({
         test1: '0.1.1',
         test2: '0.1.1',
         test3: '0.1.1'
@@ -150,14 +150,14 @@ describe('SemverResolver.prototype.resolve', () => {
     // it to test2@0.1.0, remove the constraints associated with test2@0.1.1
     // and recalculate
     it('should successfully resolve the version constraints', () => {
-      return new SemverResolver(
-        {
+      return new SemverResolver({
+        dependencies: {
           test2: '^0.1.0',
           test4: '0.1.0'
         },
-        repository.getVersions.bind(repository),
-        repository.getDependencies.bind(repository)
-      ).resolve().should.eventually.eql({
+        getVersions: repository.getVersions.bind(repository),
+        getDependencies: repository.getDependencies.bind(repository)
+      }).resolve().should.eventually.eql({
         test1: '0.1.0',
         test2: '0.1.0',
         test3: '0.1.0',
@@ -177,15 +177,15 @@ describe('SemverResolver.prototype.resolve', () => {
     // in the test set up should ensure that at least one gets removed before
     // its dependencies have been loaded
     it('should successfully resolve the version constraints', () => {
-      return new SemverResolver(
-        {
+      return new SemverResolver({
+        dependencies: {
           test2: '^0.1.0',
           test4: '0.1.0',
           test6: '^0.1.0'
         },
-        repository.getVersions.bind(repository),
-        repository.getDependencies.bind(repository)
-      ).resolve().should.eventually.eql({
+        getVersions: repository.getVersions.bind(repository),
+        getDependencies: repository.getDependencies.bind(repository)
+      }).resolve().should.eventually.eql({
         test1: '0.1.0',
         test2: '0.1.0',
         test3: '0.1.0',
@@ -207,14 +207,14 @@ describe('SemverResolver.prototype.resolve', () => {
     // and test1@0.1.0 which conflicts. However the root constraint can be
     // satisfied if we backtrack to test2@0.1.0 which would then allow test1@^0.1.0
     it('should successfully resolve the version constraints', () => {
-      return new SemverResolver(
-        {
+      return new SemverResolver({
+        dependencies: {
           test2: '^0.1.0',
           test3: '0.1.0'
         },
-        repository.getVersions.bind(repository),
-        repository.getDependencies.bind(repository)
-      ).resolve().should.eventually.eql({
+        getVersions: repository.getVersions.bind(repository),
+        getDependencies: repository.getDependencies.bind(repository)
+      }).resolve().should.eventually.eql({
         test1: '0.1.0',
         test2: '0.1.0',
         test3: '0.1.0'
@@ -234,14 +234,14 @@ describe('SemverResolver.prototype.resolve', () => {
     // in the mean time test4 should be requeued before it has been calculated due to
     // also being a dependency for test2
     it('should successfully resolve the version constraints', () => {
-      return new SemverResolver(
-        {
+      return new SemverResolver({
+        dependencies: {
           test2: '^0.1.0',
           test3: '0.1.0'
         },
-        repository.getVersions.bind(repository),
-        repository.getDependencies.bind(repository)
-      ).resolve().should.eventually.eql({
+        getVersions: repository.getVersions.bind(repository),
+        getDependencies: repository.getDependencies.bind(repository)
+      }).resolve().should.eventually.eql({
         test1: '0.1.0',
         test2: '0.1.0',
         test3: '0.1.0',
@@ -261,14 +261,14 @@ describe('SemverResolver.prototype.resolve', () => {
     // satisfied if we backtrack to test2@0.1.0 but this also requires test1@^0.1.1
     // so the constraints cannot be resolved
     it('should be rejected', () => {
-      return new SemverResolver(
-        {
+      return new SemverResolver({
+        dependencies: {
           test2: '^0.1.0',
           test3: '0.1.0'
         },
-        repository.getVersions.bind(repository),
-        repository.getDependencies.bind(repository)
-      ).resolve().should.be.rejectedWith(
+        getVersions: repository.getVersions.bind(repository),
+        getDependencies: repository.getDependencies.bind(repository)
+      }).resolve().should.be.rejectedWith(
         'Unable to satisfy backtracked version constraint: ' +
         'test2@<0.1.0 from test3@0.1.0 due to shared ' +
         'constraint on test1'
@@ -284,19 +284,25 @@ describe('SemverResolver.prototype.resolve', () => {
     // the first pass requires test2@0.1.1
     // and requires test3@0.1.0. This means the second pass requires test1@^0.1.1
     // and test1@0.1.0 which conflicts. However the constraints might be
-    // satisfied if we backtrack to test0@<0.0.0 but we can't backtrack the root
+    // satisfied if we backtrack the root but we can't backtrack the root
     it('should be rejected', () => {
-      return new SemverResolver(
-        {
+      return new SemverResolver({
+        dependencies: {
           test2: '0.1.1',
           test3: '0.1.0'
         },
-        repository.getVersions.bind(repository),
-        repository.getDependencies.bind(repository)
-      ).resolve().should.be.rejectedWith(
+        getVersions: repository.getVersions.bind(repository),
+        getDependencies: repository.getDependencies.bind(repository)
+      }).resolve().should.be.rejectedWith(
         'Unable to satisfy version constraint: test2@0.1.1 ' +
         'from root due to shared constraint from test3@0.1.0'
       );
+    });
+  });
+
+  describe('when locks are provided', () => {
+    beforeEach(() => {
+      repository = new Repository('with-locks');
     });
   });
 });

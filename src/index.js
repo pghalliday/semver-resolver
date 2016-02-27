@@ -6,9 +6,10 @@ import _ from 'lodash';
 import uuid from 'uuid';
 
 export class SemverResolver {
-  constructor(dependencies, getVersions, getDependencies) {
-    this.getVersions = getVersions;
-    this.getDependencies = getDependencies;
+  constructor(params) {
+    let dependencies = params.dependencies;
+    this.getVersions = params.getVersions;
+    this.getDependencies = params.getDependencies;
     let rootName = uuid.v4();
     this.root = rootName;
     let state = this.state = {};
