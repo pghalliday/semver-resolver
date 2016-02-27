@@ -25,7 +25,7 @@
     "precheckuncommitted": "npm run checkunstaged",
     "checkuncommitted": "git diff --cached --exit-code -- . \":!${npm_package_config_builddir}\" || (echo \"Error: staged changes outside the $npm_package_config_builddir folder should be committed first\" && false)",
     "precommitlib": "npm run checkuncommitted",
-    "commitlib": "git add -A $npm_package_config_builddir && if ! git diff --cached --exit-code; then git commit -m \"build $npm_package_config_builddir\"; fi",
+    "commitlib": "git add -A $npm_package_config_builddir && if ! git diff --cached --exit-code > /dev/null; then git commit -m \"build $npm_package_config_builddir\"; fi",
     "prepush": "npm run commitlib",
     "push": "git push",
     "pretag": "npm run push",
