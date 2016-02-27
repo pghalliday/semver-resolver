@@ -40,10 +40,12 @@ class Repository {
   }
 }
 
+let repository;
+
 describe('SemverResolver.prototype.resolve', () => {
   describe('with 1 level of constraints that can be resolved', () => {
     beforeEach(() => {
-      this.repository = new Repository('one-level-of-constraints');
+      repository = new Repository('one-level-of-constraints');
     });
 
     it('should successfully resolve the version constraints', () => {
@@ -52,8 +54,8 @@ describe('SemverResolver.prototype.resolve', () => {
           test1: '^0.1.0',
           test2: '0.1.0'
         },
-        this.repository.getVersions.bind(this.repository),
-        this.repository.getDependencies.bind(this.repository)
+        repository.getVersions.bind(repository),
+        repository.getDependencies.bind(repository)
       ).resolve().should.eventually.eql({
         test1: '0.1.1',
         test2: '0.1.0'
@@ -63,7 +65,7 @@ describe('SemverResolver.prototype.resolve', () => {
 
   describe('with constraints that cannot be resolved', () => {
     beforeEach(() => {
-      this.repository = new Repository('one-level-of-constraints');
+      repository = new Repository('one-level-of-constraints');
     });
 
     it('should fail with an error', () => {
@@ -72,8 +74,8 @@ describe('SemverResolver.prototype.resolve', () => {
           test1: '^0.1.0',
           test2: '^0.2.0'
         },
-        this.repository.getVersions.bind(this.repository),
-        this.repository.getDependencies.bind(this.repository)
+        repository.getVersions.bind(repository),
+        repository.getDependencies.bind(repository)
       ).resolve().should.be.rejectedWith(
         'Unable to satisfy version constraint: test2@^0.2.0 from root'
       );
@@ -82,7 +84,7 @@ describe('SemverResolver.prototype.resolve', () => {
 
   describe('with an unknown library', () => {
     beforeEach(() => {
-      this.repository = new Repository('one-level-of-constraints');
+      repository = new Repository('one-level-of-constraints');
     });
 
     it('should fail with an error', () => {
@@ -91,8 +93,8 @@ describe('SemverResolver.prototype.resolve', () => {
           test1: '^0.1.0',
           test9: '^0.1.0'
         },
-        this.repository.getVersions.bind(this.repository),
-        this.repository.getDependencies.bind(this.repository)
+        repository.getVersions.bind(repository),
+        repository.getDependencies.bind(repository)
       ).resolve().should.be.rejectedWith(
         'No such library: test9'
       );
@@ -101,7 +103,7 @@ describe('SemverResolver.prototype.resolve', () => {
 
   describe('with easily resolvable sub constraints', () => {
     beforeEach(() => {
-      this.repository = new Repository('two-levels-of-constraints');
+      repository = new Repository('two-levels-of-constraints');
     });
 
     it('should successfully resolve the version constraints', () => {
@@ -109,8 +111,8 @@ describe('SemverResolver.prototype.resolve', () => {
         {
           test2: '^0.1.0'
         },
-        this.repository.getVersions.bind(this.repository),
-        this.repository.getDependencies.bind(this.repository)
+        repository.getVersions.bind(repository),
+        repository.getDependencies.bind(repository)
       ).resolve().should.eventually.eql({
         test1: '0.1.1',
         test2: '0.1.1'
@@ -120,7 +122,7 @@ describe('SemverResolver.prototype.resolve', () => {
 
   describe('with overlapping constraints', () => {
     beforeEach(() => {
-      this.repository = new Repository('overlapping-constraints');
+      repository = new Repository('overlapping-constraints');
     });
 
     it('should successfully resolve the version constraints', () => {
@@ -128,8 +130,8 @@ describe('SemverResolver.prototype.resolve', () => {
         {
           test3: '0.1.1'
         },
-        this.repository.getVersions.bind(this.repository),
-        this.repository.getDependencies.bind(this.repository)
+        repository.getVersions.bind(repository),
+        repository.getDependencies.bind(repository)
       ).resolve().should.eventually.eql({
         test1: '0.1.1',
         test2: '0.1.1',
@@ -140,7 +142,7 @@ describe('SemverResolver.prototype.resolve', () => {
 
   describe('with sub constraints that result in recalculations', () => {
     beforeEach(() => {
-      this.repository = new Repository('overriding-constraints');
+      repository = new Repository('overriding-constraints');
     });
 
     // This should initially select test2@0.1.1, but then correct
@@ -152,8 +154,8 @@ describe('SemverResolver.prototype.resolve', () => {
           test2: '^0.1.0',
           test4: '0.1.0'
         },
-        this.repository.getVersions.bind(this.repository),
-        this.repository.getDependencies.bind(this.repository)
+        repository.getVersions.bind(repository),
+        repository.getDependencies.bind(repository)
       ).resolve().should.eventually.eql({
         test1: '0.1.0',
         test2: '0.1.0',
@@ -165,7 +167,7 @@ describe('SemverResolver.prototype.resolve', () => {
 
   describe('with recalculations before dependencies are loaded', () => {
     beforeEach(() => {
-      this.repository = new Repository('fast-overriding-constraints');
+      repository = new Repository('fast-overriding-constraints');
     });
 
     // This should initially select test2@0.1.1 and test6@0.1.1, but then
@@ -180,8 +182,8 @@ describe('SemverResolver.prototype.resolve', () => {
           test4: '0.1.0',
           test6: '^0.1.0'
         },
-        this.repository.getVersions.bind(this.repository),
-        this.repository.getDependencies.bind(this.repository)
+        repository.getVersions.bind(repository),
+        repository.getDependencies.bind(repository)
       ).resolve().should.eventually.eql({
         test1: '0.1.0',
         test2: '0.1.0',
@@ -196,7 +198,7 @@ describe('SemverResolver.prototype.resolve', () => {
 
   describe('with constraints that require backtracking', () => {
     beforeEach(() => {
-      this.repository = new Repository('backtracking-constraints');
+      repository = new Repository('backtracking-constraints');
     });
 
     // the first pass allows test2@0.1.1
@@ -209,8 +211,8 @@ describe('SemverResolver.prototype.resolve', () => {
           test2: '^0.1.0',
           test3: '0.1.0'
         },
-        this.repository.getVersions.bind(this.repository),
-        this.repository.getDependencies.bind(this.repository)
+        repository.getVersions.bind(repository),
+        repository.getDependencies.bind(repository)
       ).resolve().should.eventually.eql({
         test1: '0.1.0',
         test2: '0.1.0',
@@ -221,7 +223,7 @@ describe('SemverResolver.prototype.resolve', () => {
 
   describe('when requeuing already queued calculations', () => {
     beforeEach(() => {
-      this.repository = new Repository('requeuing-queued-calculations');
+      repository = new Repository('requeuing-queued-calculations');
     });
 
     // the first pass allows test2@0.1.1
@@ -236,8 +238,8 @@ describe('SemverResolver.prototype.resolve', () => {
           test2: '^0.1.0',
           test3: '0.1.0'
         },
-        this.repository.getVersions.bind(this.repository),
-        this.repository.getDependencies.bind(this.repository)
+        repository.getVersions.bind(repository),
+        repository.getDependencies.bind(repository)
       ).resolve().should.eventually.eql({
         test1: '0.1.0',
         test2: '0.1.0',
@@ -249,7 +251,7 @@ describe('SemverResolver.prototype.resolve', () => {
 
   describe('with backtracking but still cannot be resolved', () => {
     beforeEach(() => {
-      this.repository = new Repository('backtracking-impossible-constraints');
+      repository = new Repository('backtracking-impossible-constraints');
     });
 
     // the first pass allows test2@0.1.1
@@ -263,8 +265,8 @@ describe('SemverResolver.prototype.resolve', () => {
           test2: '^0.1.0',
           test3: '0.1.0'
         },
-        this.repository.getVersions.bind(this.repository),
-        this.repository.getDependencies.bind(this.repository)
+        repository.getVersions.bind(repository),
+        repository.getDependencies.bind(repository)
       ).resolve().should.be.rejectedWith(
         'Unable to satisfy backtracked version constraint: ' +
         'test2@<0.1.0 from test3@0.1.0 due to shared ' +
@@ -275,7 +277,7 @@ describe('SemverResolver.prototype.resolve', () => {
 
   describe('when the root would need to be backtracked', () => {
     beforeEach(() => {
-      this.repository = new Repository('root-requires-backtracking');
+      repository = new Repository('root-requires-backtracking');
     });
 
     // the first pass requires test2@0.1.1
@@ -288,8 +290,8 @@ describe('SemverResolver.prototype.resolve', () => {
           test2: '0.1.1',
           test3: '0.1.0'
         },
-        this.repository.getVersions.bind(this.repository),
-        this.repository.getDependencies.bind(this.repository)
+        repository.getVersions.bind(repository),
+        repository.getDependencies.bind(repository)
       ).resolve().should.be.rejectedWith(
         'Unable to satisfy version constraint: test2@0.1.1 ' +
         'from root due to shared constraint from test3@0.1.0'
