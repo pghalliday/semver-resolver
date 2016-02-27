@@ -19,7 +19,7 @@
     "precheckuncommitted": "npm run checkunstaged",
     "checkuncommitted": "echo 'Check for staged but uncommitted changes outside lib folder' && git diff --cached --exit-code -- . ':!lib' > /dev/null",
     "precommitlib": "npm run checkuncommitted",
-    "commitlib": "git add -A lib && (git commit -m 'build lib' > /dev/null || true)",
+    "commitlib": "git add -A lib && if ! git diff --exit-code; then git commit -m 'build lib'; fi",
     "prepush": "npm run commitlib",
     "push": "git push",
     "pretag": "npm run push",
