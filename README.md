@@ -77,12 +77,12 @@ let resolver = new SemverResolver(
       'bar': '^1.17.3',
       'mylib': '^2.8.0'
     },
-    // The resolution to lock where appropriate. New dependencies will
+    // The solution to lock where appropriate. New dependencies will
     // have to satisfy these versions to minimise change. However,
     // dropped dependencies and their requirements will not be counted.
-    // If the dependencies have not changed then the generated resolution
+    // If the dependencies have not changed then the generated solution
     // will be the same
-    resolution: {
+    solution: {
       'foo': {
         version: '2.4.8',
         dependencies: {
@@ -119,7 +119,7 @@ let resolver = new SemverResolver(
 resolver.resolve.then(
   locks => {
 
-    // `locks` will be a structure including the resolution
+    // `locks` will be a structure including the solution
     // that can also be used in calls to `#resolve` to lock
     // versions of dependencies
     ...
