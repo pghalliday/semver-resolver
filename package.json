@@ -1,6 +1,6 @@
 {
   "name": "semver-resolver",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Calculate an 'optimal' solution for a dependency tree using semantic versioning",
   "main": "lib/index.js",
   "scripts": {
@@ -19,7 +19,7 @@
     "precheckuncommitted": "npm run checkunstaged",
     "checkuncommitted": "echo 'Check for staged but uncommitted changes outside lib folder' && git diff --cached --exit-code -- . ':!lib' > /dev/null",
     "precommitlib": "npm run checkuncommitted",
-    "commitlib": "git add -A lib && if ! git diff --exit-code; then git commit -m 'build lib'; fi",
+    "commitlib": "git add -A lib && if ! git diff --cached --exit-code; then git commit -m 'build lib'; fi",
     "prepush": "npm run commitlib",
     "push": "git push",
     "pretag": "npm run push",
